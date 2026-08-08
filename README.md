@@ -1,4 +1,4 @@
-# PosterPro
+# Poster Studio
 
 Optimizador de producción de pósteres para impresión. Sube un diseño, elige ratios de impresión y genera archivos JPEG listos para producción a 300 DPI.
 

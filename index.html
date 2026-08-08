@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PosterPro - Optimizador de Producción</title>
+    <title>Poster Studio — Prepara tus pósters para imprimir</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090909'/%3E%3Crect x='7' y='6' width='12' height='17' rx='2' stroke='%23fff' stroke-opacity='.28' stroke-width='1.25' fill='none'/%3E%3Crect x='11' y='9' width='12' height='17' rx='2' stroke='%23fff' stroke-width='1.5' fill='none'/%3E%3C/svg%3E">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -19,14 +20,19 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
                     },
                     colors: {
-                        zinc: {
-                            850: '#1f1f22',
-                            900: '#18181b',
-                            950: '#0a0a0a',
+                        surface: {
+                            DEFAULT: '#121212',
+                            raised: '#181818',
+                            overlay: '#1a1a1a',
                         }
+                    },
+                    boxShadow: {
+                        'premium': '0 0 0 1px rgba(255,255,255,0.06), 0 8px 40px -12px rgba(0,0,0,0.8)',
+                        'premium-lg': '0 0 0 1px rgba(255,255,255,0.08), 0 24px 80px -20px rgba(0,0,0,0.9)',
+                        'glow': '0 0 40px -8px rgba(255,255,255,0.15)',
                     }
                 }
             }
@@ -34,71 +40,604 @@
     </script>
 
     <style>
+        :root {
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
+            --duration-fast: 0.15s;
+            --duration-normal: 0.25s;
+            --duration-slow: 0.45s;
+            --sidebar-width: 260px;
+            --sidebar-width-collapsed: 72px;
+            --sidebar-duration: 0.52s;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
         body {
-            background-color: #0a0a0a;
-            color: #e4e4e7;
+            background-color: #090909;
+            color: #d4d4d8;
             overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
-                radial-gradient(circle at 85% 30%, rgba(255, 255, 255, 0.04) 0%, transparent 50%);
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+                radial-gradient(ellipse 80% 60% at 50% -20%, rgba(255,255,255,0.06) 0%, transparent 60%),
+                radial-gradient(circle at 90% 80%, rgba(255,255,255,0.03) 0%, transparent 40%);
+            background-size: 64px 64px, 64px 64px, 100% 100%, 100% 100%;
         }
 
         .glass-panel {
-            background: rgba(24, 24, 27, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            background: rgba(18, 18, 18, 0.75);
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 8px 32px -8px rgba(0,0,0,0.6);
+            transition: border-color var(--duration-normal) var(--ease-out),
+                        box-shadow var(--duration-normal) var(--ease-out),
+                        transform var(--duration-normal) var(--ease-out);
+        }
+
+        .glass-panel-interactive:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 12px 40px -12px rgba(0,0,0,0.7);
+        }
+
+        .section-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #52525b;
         }
 
         .nav-item {
-            transition: all 0.2s ease;
+            transition:
+                background var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                padding var(--sidebar-duration) var(--ease-premium),
+                gap var(--sidebar-duration) var(--ease-premium),
+                justify-content var(--sidebar-duration) var(--ease-premium);
         }
-        
+
+        .nav-item:active {
+            transform: scale(0.98);
+        }
+
         .nav-item.active {
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            transition:
+                background 0.32s var(--ease-premium),
+                color 0.32s var(--ease-premium),
+                transform var(--duration-fast) var(--ease-out),
+                padding var(--sidebar-duration) var(--ease-premium),
+                gap var(--sidebar-duration) var(--ease-premium),
+                justify-content var(--sidebar-duration) var(--ease-premium);
+        }
+
+        .nav-item.active .nav-accent {
+            opacity: 1;
+            transform: translateY(-50%) scaleY(1);
+        }
+
+        .nav-accent {
+            transform: translateY(-50%) scaleY(0.4);
+            transition: opacity var(--duration-normal) var(--ease-out),
+                        transform var(--duration-normal) var(--ease-spring);
         }
 
         .format-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: border-color var(--duration-normal) var(--ease-out),
+                        background var(--duration-normal) var(--ease-out),
+                        transform var(--duration-normal) var(--ease-out),
+                        box-shadow var(--duration-normal) var(--ease-out);
         }
-        
+
         .format-card:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.03);
-            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateY(-1px);
+        }
+
+        .format-card:active {
+            transform: scale(0.98);
         }
 
         .active-card {
-            border-color: rgba(255, 255, 255, 0.8) !important;
-            background: rgba(255, 255, 255, 0.05) !important;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.35) !important;
+            background: rgba(255, 255, 255, 0.06) !important;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.06);
+            transform: scale(1);
+            animation: cardSelect 0.35s var(--ease-spring);
+        }
+
+        @keyframes cardSelect {
+            0% { transform: scale(0.97); }
+            60% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .format-checkbox {
+            transition: background var(--duration-normal) var(--ease-out),
+                        border-color var(--duration-normal) var(--ease-out),
+                        transform var(--duration-normal) var(--ease-spring),
+                        box-shadow var(--duration-normal) var(--ease-out);
         }
 
         .format-checkbox.checked {
             background: #ffffff;
             border-color: #ffffff;
+            box-shadow: 0 0 12px rgba(255,255,255,0.3);
+            animation: checkPop 0.35s var(--ease-spring);
+        }
+
+        @keyframes checkPop {
+            0% { transform: scale(0.6); }
+            70% { transform: scale(1.15); }
+            100% { transform: scale(1); }
         }
 
         .format-checkbox.checked .format-check-icon {
             opacity: 1;
             color: #000000;
+            animation: iconFadeIn 0.25s var(--ease-out) 0.05s backwards;
+        }
+
+        @keyframes iconFadeIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .align-btn {
-            transition: all 0.2s ease;
+            transition: background var(--duration-fast) var(--ease-out),
+                        color var(--duration-fast) var(--ease-out),
+                        border-color var(--duration-fast) var(--ease-out),
+                        transform var(--duration-fast) var(--ease-out);
+        }
+
+        .align-btn:active {
+            transform: scale(0.97);
         }
 
         .align-btn.active {
             background: rgba(255, 255, 255, 0.1);
             color: white;
-            border-color: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+            animation: tabSelect 0.3s var(--ease-out);
+        }
+
+        @keyframes tabSelect {
+            from { opacity: 0.7; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .btn-primary {
+            background: linear-gradient(180deg, #ffffff 0%, #e4e4e7 100%);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 4px 16px -4px rgba(255,255,255,0.25), 0 8px 24px -8px rgba(0,0,0,0.5);
+            transition: background var(--duration-normal) var(--ease-out),
+                        box-shadow var(--duration-normal) var(--ease-out),
+                        transform var(--duration-normal) var(--ease-out);
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.2), 0 4px 20px -4px rgba(255,255,255,0.35), 0 12px 32px -8px rgba(0,0,0,0.5);
+            transform: translateY(-1px);
+        }
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0) scale(0.98);
+            transition-duration: 0.08s;
+        }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+            transition: transform var(--duration-normal) var(--ease-out),
+                        border-color var(--duration-normal) var(--ease-out);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            display: inline-block;
+            transition: transform var(--duration-normal) var(--ease-out),
+                        opacity var(--duration-normal) var(--ease-out);
+        }
+
+        .stat-value.stat-pulse {
+            animation: statPulse 0.5s var(--ease-out);
+        }
+
+        @keyframes statPulse {
+            0% { opacity: 0.5; transform: translateY(4px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%);
+            pointer-events: none;
         }
 
         .dashed-border {
-            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border: 1.5px dashed rgba(255, 255, 255, 0.08);
             border-radius: 1rem;
+            transition: border-color var(--duration-slow) var(--ease-out),
+                        background var(--duration-slow) var(--ease-out);
+        }
+
+        .upload-zone-glow {
+            box-shadow: inset 0 0 60px -20px rgba(255,255,255,0.03);
+            transition: box-shadow var(--duration-slow) var(--ease-out);
+        }
+
+        #uploadZone.is-dragover .dashed-border {
+            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.03);
+            animation: dragPulse 1.2s var(--ease-in-out) infinite;
+        }
+
+        @keyframes dragPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .panel-fade-in {
+            animation: panelEnter 0.45s var(--ease-out) forwards;
+        }
+
+        .panel-fade-out {
+            animation: panelExit 0.3s var(--ease-out) forwards;
+        }
+
+        @keyframes panelEnter {
+            from { opacity: 0; transform: translateY(12px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes panelExit {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to { opacity: 0; transform: translateY(-8px) scale(0.98); }
+        }
+
+        .overlay-fade {
+            transition: opacity var(--duration-slow) var(--ease-out),
+                        backdrop-filter var(--duration-slow) var(--ease-out);
+        }
+
+        .results-reveal {
+            animation: resultsSlide 0.5s var(--ease-out) forwards;
+        }
+
+        @keyframes resultsSlide {
+            from { opacity: 0; transform: translateY(16px); max-height: 0; }
+            to { opacity: 1; transform: translateY(0); max-height: 800px; }
+        }
+
+        .list-item-enter {
+            animation: listItemEnter 0.4s var(--ease-out) backwards;
+        }
+
+        .history-ratio-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: #a1a1aa;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .history-download-btn {
+            transition: background var(--duration-fast) var(--ease-out),
+                        border-color var(--duration-fast) var(--ease-out),
+                        color var(--duration-fast) var(--ease-out),
+                        transform var(--duration-fast) var(--ease-out);
+        }
+
+        .history-download-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+        }
+
+        .history-download-btn:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+
+        .settings-toggle-btn {
+            transition: background var(--duration-fast) var(--ease-out),
+                        color var(--duration-fast) var(--ease-out),
+                        border-color var(--duration-fast) var(--ease-out),
+                        transform var(--duration-fast) var(--ease-out);
+        }
+
+        .settings-toggle-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+
+        .settings-toggle-btn:active {
+            transform: scale(0.97);
+        }
+
+        .modal-overlay {
+            background: rgba(9, 9, 9, 0.72);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--duration-normal) var(--ease-out);
+        }
+
+        .modal-overlay.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-panel {
+            transform: translateY(12px) scale(0.98);
+            opacity: 0;
+            transition: transform var(--duration-normal) var(--ease-out),
+                        opacity var(--duration-normal) var(--ease-out);
+        }
+
+        .modal-overlay.is-open .modal-panel {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        @keyframes listItemEnter {
+            from { opacity: 0; transform: translateX(-8px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Dropdown animado */
+        .dropdown-panel {
+            opacity: 0;
+            transform: translateY(6px) scale(0.97);
+            transform-origin: bottom center;
+            pointer-events: none;
+            transition: opacity var(--duration-normal) var(--ease-out),
+                        transform var(--duration-normal) var(--ease-out);
+        }
+
+        .dropdown-panel.is-open {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        /* App shell entrance */
+        .app-shell {
+            animation: appEnter 0.6s var(--ease-out) backwards;
+        }
+
+        @keyframes appEnter {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        aside.app-sidebar {
+            width: var(--sidebar-width);
+            animation: sidebarEnter 0.55s var(--ease-out) 0.05s backwards;
+            transition:
+                width var(--sidebar-duration) var(--ease-premium),
+                box-shadow var(--sidebar-duration) var(--ease-premium);
+            overflow: hidden;
+            will-change: width;
+        }
+
+        .app-sidebar.is-transitioning {
+            box-shadow: 6px 0 32px -12px rgba(0, 0, 0, 0.55);
+        }
+
+        .app-sidebar.is-collapsed {
+            width: var(--sidebar-width-collapsed);
+        }
+
+        .app-sidebar.sidebar-no-animate,
+        .app-sidebar.sidebar-no-animate * {
+            transition: none !important;
+            animation: none !important;
+        }
+
+        .sidebar-brand-block {
+            transition:
+                padding var(--sidebar-duration) var(--ease-premium),
+                min-height var(--sidebar-duration) var(--ease-premium);
+        }
+
+        .sidebar-brand-row {
+            transition: gap var(--sidebar-duration) var(--ease-premium);
+        }
+
+        .sidebar-brand-row .app-logo {
+            transition:
+                transform var(--sidebar-duration) var(--ease-premium),
+                box-shadow var(--sidebar-duration) var(--ease-premium);
+        }
+
+        .app-sidebar.is-collapsed .sidebar-brand-row .app-logo {
+            transform: scale(1.08);
+        }
+
+        .sidebar-brand-row:hover .app-logo {
+            border-color: rgba(255, 255, 255, 0.22);
+        }
+
+        .sidebar-nav {
+            transition:
+                padding-left var(--sidebar-duration) var(--ease-premium),
+                padding-right var(--sidebar-duration) var(--ease-premium);
+        }
+
+        .sidebar-section-label {
+            transition:
+                opacity 0.28s var(--ease-premium),
+                height 0.36s var(--ease-premium),
+                margin 0.36s var(--ease-premium),
+                transform 0.32s var(--ease-premium);
+        }
+
+        .app-sidebar:not(.is-collapsed) .sidebar-section-label {
+            transition-delay: 0.14s;
+        }
+
+        .sidebar-text {
+            overflow: hidden;
+            white-space: nowrap;
+            max-width: 180px;
+            opacity: 1;
+            transform: translateX(0);
+            transition:
+                opacity 0.3s var(--ease-premium),
+                transform 0.34s var(--ease-premium),
+                max-width var(--sidebar-duration) var(--ease-premium),
+                margin var(--sidebar-duration) var(--ease-premium);
+        }
+
+        .app-sidebar:not(.is-collapsed) .sidebar-text {
+            transition-delay: 0.16s, 0.16s, 0s, 0s;
+        }
+
+        .app-sidebar.is-collapsed .sidebar-text {
+            opacity: 0;
+            transform: translateX(-8px);
+            max-width: 0;
+            margin: 0;
+            pointer-events: none;
+            transition-delay: 0s, 0s, 0.1s, 0.1s;
+        }
+
+        .app-sidebar.is-collapsed .sidebar-brand-row {
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.625rem;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .app-sidebar.is-collapsed .sidebar-brand-block {
+            height: auto;
+            min-height: 72px;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+
+        .app-sidebar.is-collapsed .sidebar-nav {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
+        .app-sidebar.is-collapsed .sidebar-section-label {
+            opacity: 0;
+            height: 0;
+            margin: 0;
+            transform: translateX(-6px);
+            overflow: hidden;
+            pointer-events: none;
+            transition-delay: 0s;
+        }
+
+        .app-sidebar.is-collapsed .nav-item {
+            justify-content: center;
+            gap: 0;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+
+        .app-sidebar.is-collapsed .nav-item .nav-accent {
+            opacity: 0;
+            transform: translateY(-50%) scaleY(0);
+            transition:
+                opacity 0.2s var(--ease-premium),
+                transform 0.28s var(--ease-premium);
+        }
+
+        .app-sidebar:not(.is-collapsed) .nav-item .nav-accent {
+            transition:
+                opacity var(--duration-normal) var(--ease-out),
+                transform var(--duration-normal) var(--ease-spring);
+            transition-delay: 0.12s;
+        }
+
+        .sidebar-toggle-btn {
+            transition:
+                background var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out),
+                opacity var(--duration-normal) var(--ease-out),
+                transform var(--duration-fast) var(--ease-out),
+                margin var(--sidebar-duration) var(--ease-premium);
+        }
+
+        .sidebar-toggle-btn .sidebar-toggle-icon,
+        .sidebar-toggle-btn .sidebar-toggle-icon svg {
+            transition: transform var(--sidebar-duration) var(--ease-premium);
+            transform-origin: center;
+        }
+
+        .app-sidebar.is-collapsed .sidebar-toggle-btn .sidebar-toggle-icon,
+        .sidebar-toggle-btn.is-collapsed .sidebar-toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+        }
+
+        .sidebar-toggle-btn:active {
+            transform: scale(0.94);
+        }
+
+        .sidebar-toggle-btn--inline {
+            margin-left: auto;
+        }
+
+        .app-sidebar.is-collapsed .sidebar-toggle-btn--inline {
+            margin-left: 0;
+        }
+
+        .app-sidebar.is-transitioning .sidebar-toggle-btn {
+            pointer-events: none;
+        }
+
+        @keyframes sidebarEnter {
+            from { opacity: 0; transform: translateX(-12px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        main.app-main {
+            animation: mainEnter 0.55s var(--ease-out) 0.1s backwards;
+            transition: filter var(--sidebar-duration) var(--ease-premium);
+        }
+
+        .app-sidebar.is-transitioning + .app-main {
+            filter: brightness(0.98);
+        }
+
+        @keyframes mainEnter {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Custom Range Slider */
@@ -116,6 +655,15 @@
             cursor: pointer;
             margin-top: -6px;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            transition: transform var(--duration-fast) var(--ease-out),
+                        box-shadow var(--duration-fast) var(--ease-out);
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 16px rgba(255, 255, 255, 0.6);
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(1.05);
         }
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
@@ -123,6 +671,10 @@
             cursor: pointer;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 2px;
+            transition: background var(--duration-fast) var(--ease-out);
+        }
+        input[type=range]:hover::-webkit-slider-runnable-track {
+            background: rgba(255, 255, 255, 0.15);
         }
 
         /* Custom Scrollbar */
@@ -141,13 +693,300 @@
         }
 
         /* View transitions */
+        .views-stage {
+            position: relative;
+            width: 100%;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
         .view-section {
             display: none;
-            animation: fadeIn 0.4s ease-out forwards;
+            width: 100%;
         }
-        .view-section.active {
+
+        .view-section.active,
+        .view-section.is-leaving,
+        .view-section.is-entering {
             display: flex;
         }
+
+        .view-section.is-leaving {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 2;
+            pointer-events: none;
+            animation: viewLeave 0.32s var(--ease-premium) both;
+        }
+
+        .view-section.active.is-entering {
+            position: relative;
+            z-index: 1;
+            animation: viewEnter 0.42s var(--ease-premium) both;
+        }
+
+        .view-section.active:not(.is-entering):not(.is-leaving) {
+            position: relative;
+        }
+
+        .views-stage.is-transitioning {
+            pointer-events: none;
+        }
+
+        .view-section.is-entering .stagger-children > * {
+            animation: staggerUp 0.44s var(--ease-premium) backwards;
+        }
+
+        .view-section.is-entering .stagger-children > *:nth-child(1) { animation-delay: 0.03s; }
+        .view-section.is-entering .stagger-children > *:nth-child(2) { animation-delay: 0.06s; }
+        .view-section.is-entering .stagger-children > *:nth-child(3) { animation-delay: 0.09s; }
+        .view-section.is-entering .stagger-children > *:nth-child(4) { animation-delay: 0.12s; }
+        .view-section.is-entering .stagger-children > *:nth-child(5) { animation-delay: 0.15s; }
+        .view-section.is-entering .stagger-children > *:nth-child(6) { animation-delay: 0.18s; }
+        .view-section.is-entering .stagger-children > *:nth-child(7) { animation-delay: 0.21s; }
+        .view-section.is-entering .stagger-children > *:nth-child(8) { animation-delay: 0.24s; }
+
+        @keyframes viewEnter {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes viewLeave {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+        }
+
+        @keyframes staggerUp {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Processor: columnas con scroll independiente en pantallas con poca altura */
+        .app-main-scroll {
+            min-height: 0;
+        }
+
+        #view-processor.view-section.active {
+            min-height: 0;
+        }
+
+        @media (min-width: 1024px) {
+            .app-main-scroll:has(#view-processor.active) {
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .views-stage:has(#view-processor.active),
+            .views-stage:has(#view-mockups.active) {
+                flex: 1 1 auto;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+            }
+
+            #view-processor.view-section.active {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            .processor-left-col {
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            .processor-settings-col {
+                min-height: 0;
+                max-height: 100%;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                scrollbar-gutter: stable;
+            }
+
+            .processor-settings-col > * {
+                flex-shrink: 0;
+            }
+        }
+
+        @media (max-height: 820px) {
+            .app-main-scroll {
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+            }
+
+            #view-processor.view-section.active {
+                gap: 1rem;
+            }
+
+            .processor-preview-panel,
+            .processor-upload-panel {
+                min-height: 220px !important;
+            }
+        }
+
+        @media (max-height: 680px) {
+            .processor-preview-panel,
+            .processor-upload-panel {
+                min-height: 180px !important;
+            }
+        }
+
+        /* Mockups 3D */
+        #view-mockups.view-section.active {
+            min-height: 0;
+        }
+
+        @media (min-width: 1024px) {
+            .app-main-scroll:has(#view-mockups.active) {
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            #view-mockups.view-section.active {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: hidden;
+                align-items: stretch;
+            }
+
+            .mockups-left-col {
+                min-height: 0;
+                max-height: 100%;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                scrollbar-gutter: stable;
+            }
+
+            .mockups-left-col > * {
+                flex-shrink: 0;
+            }
+
+            .mockups-right-col {
+                min-height: 0;
+                max-height: 100%;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .mockups-generate-panel {
+                flex-shrink: 0;
+            }
+
+            .mockups-gallery-panel {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .mockups-gallery-body {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+            }
+        }
+
+        @media (max-width: 1023px) {
+            #view-mockups.view-section.active {
+                overflow: visible;
+            }
+
+            .mockups-left-col,
+            .mockups-right-col {
+                overflow: visible;
+            }
+
+            .mockups-gallery-panel {
+                min-height: 220px;
+            }
+        }
+
+        @media (max-height: 820px) {
+            #view-mockups.view-section.active {
+                gap: 1rem;
+            }
+
+            .mockup-poster-zone {
+                min-height: 140px !important;
+                padding: 1.5rem !important;
+            }
+
+            #view-mockups .glass-panel .px-5.py-4 {
+                padding-top: 0.875rem;
+                padding-bottom: 0.875rem;
+            }
+        }
+
+        @media (max-height: 680px) {
+            .mockup-poster-zone {
+                min-height: 120px !important;
+                padding: 1rem !important;
+            }
+
+            #mockupPosterImage {
+                max-height: 7rem;
+            }
+        }
+
+        .mockup-template-card.active-card {
+            border-color: rgba(255, 255, 255, 0.35) !important;
+            background: rgba(255, 255, 255, 0.06) !important;
+        }
+
+        .mockup-gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .mockup-gallery-item {
+            position: relative;
+            border-radius: 0.875rem;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.02);
+            transition: border-color var(--duration-normal) var(--ease-out),
+                        transform var(--duration-normal) var(--ease-out);
+        }
+
+        .mockup-gallery-item:hover {
+            border-color: rgba(255, 255, 255, 0.18);
+            transform: translateY(-2px);
+        }
+
+        .mockup-gallery-item img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            display: block;
+            background: #080808;
+        }
+
         
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -165,17 +1004,21 @@
             gap: 0.5rem;
         }
         .toast {
-            background: #18181b;
+            background: rgba(18, 18, 18, 0.95);
+            backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            padding: 0.875rem 1.25rem;
+            border-radius: 0.875rem;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 16px 48px -12px rgba(0, 0, 0, 0.7);
+            font-size: 0.8125rem;
+            font-weight: 500;
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-            transition: opacity 0.3s ease;
+            animation: toastEnter 0.4s var(--ease-spring) forwards;
+            transition: opacity var(--duration-normal) var(--ease-out),
+                        transform var(--duration-normal) var(--ease-out);
         }
         .toast.toast-error {
             border-left: 4px solid #ef4444;
@@ -188,315 +1031,920 @@
         }
         .toast.hiding {
             opacity: 0;
+            transform: translateX(12px) scale(0.96);
         }
+
+        @keyframes toastEnter {
+            from { transform: translateX(100%) scale(0.95); opacity: 0; }
+            to { transform: translateX(0) scale(1); opacity: 1; }
+        }
+
         @keyframes slideInRight {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+
+        .status-dot {
+            animation: statusPulse 2.5s var(--ease-in-out) infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(52,211,153,0.6); }
+            50% { opacity: 0.7; box-shadow: 0 0 4px rgba(52,211,153,0.3); }
+        }
+
+        /* ─── Premium Icon System ─── */
+        :root {
+            --icon-stroke: 1.5;
+            --icon-color: #a1a1aa;
+            --icon-color-bright: #fafafa;
+        }
+
+        .icon, [data-lucide] svg, .lucide {
+            stroke-width: var(--icon-stroke);
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+            transition: color var(--duration-fast) var(--ease-out),
+                        stroke var(--duration-fast) var(--ease-out),
+                        transform var(--duration-normal) var(--ease-out),
+                        opacity var(--duration-fast) var(--ease-out);
+        }
+
+        .icon-box {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06),
+                        0 1px 2px rgba(0, 0, 0, 0.2);
+            transition: background var(--duration-normal) var(--ease-out),
+                        border-color var(--duration-normal) var(--ease-out),
+                        box-shadow var(--duration-normal) var(--ease-out),
+                        transform var(--duration-normal) var(--ease-out);
+        }
+
+        .icon-box::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 55%);
+            pointer-events: none;
+        }
+
+        .icon-box .icon,
+        .icon-box [data-lucide] {
+            position: relative;
+            z-index: 1;
+            color: var(--icon-color);
+        }
+
+        .icon-box--xs { width: 28px; height: 28px; border-radius: 8px; }
+        .icon-box--xs .icon, .icon-box--xs svg { width: 14px; height: 14px; }
+
+        .icon-box--sm { width: 32px; height: 32px; border-radius: 9px; }
+        .icon-box--sm .icon, .icon-box--sm svg { width: 16px; height: 16px; }
+
+        .icon-box--md { width: 36px; height: 36px; }
+        .icon-box--md .icon, .icon-box--md svg { width: 18px; height: 18px; }
+
+        .icon-box--lg { width: 48px; height: 48px; border-radius: 14px; }
+        .icon-box--lg .icon, .icon-box--lg svg { width: 22px; height: 22px; }
+
+        .icon-box--xl { width: 56px; height: 56px; border-radius: 16px; }
+        .icon-box--xl .icon, .icon-box--xl svg { width: 26px; height: 26px; }
+
+        /* Brand logo — minimal mark */
+        .app-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition:
+                transform var(--sidebar-duration) var(--ease-premium),
+                border-color var(--duration-normal) var(--ease-out),
+                background var(--duration-normal) var(--ease-out);
+        }
+
+        .app-logo__mark {
+            width: 18px;
+            height: 18px;
+            display: block;
+        }
+
+        .app-logo__mark rect {
+            vector-effect: non-scaling-stroke;
+        }
+
+        .app-logo__mark .logo-back {
+            stroke: rgba(255, 255, 255, 0.32);
+            stroke-width: 1.25;
+        }
+
+        .app-logo__mark .logo-front {
+            stroke: #ffffff;
+            stroke-width: 1.5;
+        }
+
+        /* Brand icon box (secondary uses) */
+        .icon-box--brand {
+            background: linear-gradient(145deg, #ffffff 0%, #e4e4e7 100%);
+            border-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.1),
+                        0 4px 16px -4px rgba(255,255,255,0.35),
+                        inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+        .icon-box--brand .icon, .icon-box--brand svg { color: #090909; stroke-width: 2; }
+
+        /* Navigation */
+        .icon-box--nav {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.06);
+            box-shadow: none;
+        }
+        .icon-box--nav .icon, .icon-box--nav svg { width: 16px; height: 16px; color: #71717a; }
+        .nav-item:hover .icon-box--nav .icon,
+        .nav-item:hover .icon-box--nav svg { color: #e4e4e7; }
+        .nav-item:hover .icon-box--nav {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        .nav-item.active .icon-box--nav {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.14);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        .nav-item.active .icon-box--nav .icon,
+        .nav-item.active .icon-box--nav svg { color: #ffffff; }
+
+        /* Stat cards — unique tints */
+        .icon-box--stat-blue {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: rgba(96, 165, 250, 0.2);
+            box-shadow: inset 0 1px 0 rgba(147, 197, 253, 0.1), 0 0 20px -8px rgba(59, 130, 246, 0.3);
+        }
+        .icon-box--stat-blue .icon, .icon-box--stat-blue svg { color: #93c5fd; }
+
+        .icon-box--stat-amber {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: rgba(251, 191, 36, 0.2);
+            box-shadow: inset 0 1px 0 rgba(253, 224, 71, 0.08), 0 0 20px -8px rgba(245, 158, 11, 0.25);
+        }
+        .icon-box--stat-amber .icon, .icon-box--stat-amber svg { color: #fcd34d; }
+
+        .icon-box--stat-violet {
+            background: rgba(139, 92, 246, 0.08);
+            border-color: rgba(167, 139, 250, 0.2);
+            box-shadow: inset 0 1px 0 rgba(196, 181, 253, 0.08), 0 0 20px -8px rgba(139, 92, 246, 0.25);
+        }
+        .icon-box--stat-violet .icon, .icon-box--stat-violet svg { color: #c4b5fd; }
+
+        /* Header action */
+        .icon-box--action {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: transparent;
+            border-color: transparent;
+            box-shadow: none;
+        }
+        .icon-box--action .icon, .icon-box--action svg { color: #71717a; }
+        .group:hover .icon-box--action,
+        button:hover .icon-box--action {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        .group:hover .icon-box--action .icon,
+        button:hover .icon-box--action .icon,
+        button:hover .icon-box--action svg { color: #ffffff; }
+
+        /* Dropdown menu icons */
+        .icon-box--menu {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.06);
+            box-shadow: none;
+        }
+        .icon-box--menu .icon, .icon-box--menu svg { width: 16px; height: 16px; color: #a1a1aa; }
+        [data-menu-item]:hover .icon-box--menu {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        [data-menu-item]:hover .icon-box--menu .icon,
+        [data-menu-item]:hover .icon-box--menu svg { color: #ffffff; }
+        [data-menu-item].active .icon-box--menu {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.14);
+        }
+        [data-menu-item].active .icon-box--menu .icon,
+        [data-menu-item].active .icon-box--menu svg { color: #ffffff; }
+
+        /* Upload zone */
+        .icon-box--upload {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px -12px rgba(0,0,0,0.4);
+        }
+        .icon-box--upload .icon, .icon-box--upload svg { color: #a1a1aa; }
+        .group:hover .icon-box--upload {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.16);
+            transform: scale(1.05);
+        }
+        .group:hover .icon-box--upload .icon,
+        .group:hover .icon-box--upload svg { color: #ffffff; }
+
+        /* Panel / section header */
+        .icon-box--panel {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.07);
+            box-shadow: none;
+        }
+        .icon-box--panel .icon, .icon-box--panel svg { width: 14px; height: 14px; color: #71717a; }
+
+        /* Lock / empty state */
+        .icon-box--muted {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.07);
+            box-shadow: none;
+        }
+        .icon-box--muted .icon, .icon-box--muted svg { color: #52525b; }
+
+        /* File list */
+        .icon-box--file {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.07);
+        }
+        .icon-box--file .icon, .icon-box--file svg { width: 16px; height: 16px; color: #71717a; }
+        .group:hover .icon-box--file .icon,
+        .group:hover .icon-box--file svg { color: #d4d4d8; }
+
+        /* Download CTA */
+        .icon-box--download {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #ffffff;
+            border-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 8px -2px rgba(255,255,255,0.3);
+        }
+        .icon-box--download .icon, .icon-box--download svg { width: 14px; height: 14px; color: #090909; stroke-width: 2; }
+        a:hover .icon-box--download { transform: scale(1.05); }
+
+        /* Success action */
+        .icon-box--success-soft {
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(52, 211, 153, 0.2);
+        }
+        .icon-box--success-soft .icon, .icon-box--success-soft svg { color: #6ee7b7; }
+
+        /* Toast icons */
+        .icon-box--toast {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            box-shadow: none;
+        }
+        .icon-box--toast .icon, .icon-box--toast svg { width: 16px; height: 16px; }
+        .icon-box--toast-error { background: rgba(239, 68, 68, 0.12); border-color: rgba(248, 113, 113, 0.25); }
+        .icon-box--toast-error .icon, .icon-box--toast-error svg { color: #fca5a5; }
+        .icon-box--toast-success { background: rgba(16, 185, 129, 0.12); border-color: rgba(52, 211, 153, 0.25); }
+        .icon-box--toast-success .icon, .icon-box--toast-success svg { color: #6ee7b7; }
+        .icon-box--toast-warning { background: rgba(245, 158, 11, 0.12); border-color: rgba(251, 191, 36, 0.25); }
+        .icon-box--toast-warning .icon, .icon-box--toast-warning svg { color: #fcd34d; }
+
+        /* Inline / button icons (no box) */
+        .icon--inline, .icon--inline svg.lucide { width: 16px; height: 16px; color: currentColor; }
+        .icon--sm, .icon--sm svg.lucide { width: 14px; height: 14px; color: currentColor; }
+        .icon--md, .icon--md svg.lucide { width: 18px; height: 18px; color: currentColor; }
+        .icon--chevron, .icon--chevron svg.lucide { width: 16px; height: 16px; color: #52525b; }
+        .icon--spin, .icon--spin svg.lucide { animation: iconSpin 0.8s linear infinite; }
+        @keyframes iconSpin { to { transform: rotate(360deg); } }
+
+        /* Primary button icon */
+        .btn-primary .icon, .btn-primary svg { color: #090909; stroke-width: 2.25; }
+
+        /* Format check */
+        .icon-box--check {
+            width: 16px;
+            height: 16px;
+            border-radius: 5px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+        .icon-box--check::after { display: none; }
+        .format-checkbox.checked .icon-box--check,
+        .format-checkbox.checked { background: #fff; }
+        .format-checkbox.checked .icon, .format-checkbox.checked svg { color: #000; stroke-width: 2.5; }
+
+        .stat-card:hover .icon-box--stat-blue,
+        .stat-card:hover .icon-box--stat-amber,
+        .stat-card:hover .icon-box--stat-violet {
+            transform: scale(1.05);
+        }
     </style>
 </head>
-<body class="h-screen w-full flex text-sm overflow-hidden selection:bg-white/20">
+<body class="app-shell h-screen w-full flex text-sm overflow-hidden selection:bg-white/20 antialiased">
 
     <!-- Sidebar -->
-    <aside class="w-64 glass-panel border-r border-t-0 border-b-0 border-l-0 flex flex-col z-20 shrink-0">
+    <aside id="appSidebar" class="app-sidebar h-full min-h-0 bg-[#0c0c0c] border-r border-white/[0.06] flex flex-col z-20 shrink-0">
         <!-- Brand -->
-        <div class="h-20 flex items-center px-6 border-b border-white/5">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                    <i data-lucide="layers" class="w-5 h-5 text-black"></i>
+        <div class="sidebar-brand-block h-[72px] shrink-0 flex items-center px-5 border-b border-white/[0.06]">
+            <div class="sidebar-brand-row flex items-center gap-3 flex-1 min-w-0">
+                <div class="app-logo shrink-0" aria-hidden="true">
+                    <svg class="app-logo__mark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect class="logo-back" x="5" y="4" width="12" height="16" rx="2" fill="none"/>
+                        <rect class="logo-front" x="8" y="7" width="12" height="16" rx="2" fill="none"/>
+                    </svg>
                 </div>
-                <span class="font-semibold text-lg text-white tracking-tight">PosterPro</span>
+                <div class="sidebar-text flex flex-col min-w-0">
+                    <span class="font-semibold text-[15px] text-white tracking-tight leading-none">Poster Studio</span>
+                    <span class="text-[10px] text-zinc-600 mt-0.5 font-medium">Listo para imprimir</span>
+                </div>
+                <button
+                    type="button"
+                    id="sidebarToggle"
+                    onclick="toggleSidebar()"
+                    class="sidebar-toggle-btn sidebar-toggle-btn--inline shrink-0 p-2 rounded-lg text-zinc-500 hover:text-white"
+                    aria-label="Plegar menú lateral"
+                    aria-expanded="true"
+                    title="Plegar menú"
+                >
+                    <i data-lucide="panel-left-close" class="icon icon--sm sidebar-toggle-icon"></i>
+                </button>
             </div>
         </div>
 
         <!-- Navigation -->
-        <div class="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-1">
-            <div class="px-3 mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Menú Principal</div>
-            
-            <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white w-full text-left">
-                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-                <span>Dashboard</span>
-            </button>
-            
-            <button onclick="switchView('processor')" id="nav-processor" class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white w-full text-left">
-                <i data-lucide="check-square" class="w-4 h-4"></i>
-                <span>Procesador</span>
-            </button>
-            
-            <button onclick="switchView('history')" id="nav-history" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white w-full text-left">
-                <i data-lucide="inbox" class="w-4 h-4"></i>
-                <span>Historial</span>
+        <div class="sidebar-nav flex-1 min-h-0 overflow-y-auto py-5 px-3 flex flex-col gap-0.5">
+            <div class="sidebar-section-label px-3 mb-2 section-label">Workspace</div>
+
+            <button onclick="switchView('dashboard')" id="nav-dashboard" title="Dashboard" class="nav-item group relative w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-400 rounded-lg hover:bg-white/[0.06] hover:text-white transition-all">
+                <span class="nav-accent absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3/5 bg-white rounded-r-full opacity-0 transition-opacity group-hover:opacity-100 group-[.active]:opacity-100"></span>
+                <span class="icon-box icon-box--nav shrink-0"><i data-lucide="layout-dashboard"></i></span>
+                <span class="sidebar-text nav-label">Dashboard</span>
             </button>
 
-            <div class="px-3 mt-8 mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Sistema</div>
-            
-            <button onclick="switchView('settings')" id="nav-settings" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white w-full text-left">
-                <i data-lucide="settings" class="w-4 h-4"></i>
-                <span>Ajustes</span>
+            <button onclick="switchView('processor')" id="nav-processor" title="Procesador" class="nav-item active group relative w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-400 rounded-lg hover:bg-white/[0.06] hover:text-white transition-all">
+                <span class="nav-accent absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3/5 bg-white rounded-r-full opacity-0 transition-opacity group-hover:opacity-100 group-[.active]:opacity-100"></span>
+                <span class="icon-box icon-box--nav shrink-0"><i data-lucide="wand-2"></i></span>
+                <span class="sidebar-text nav-label">Procesador</span>
             </button>
-        </div>
 
-        <!-- User Profile -->
-        <div class="p-4 border-t border-white/5">
-            <div class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-500"></div>
-                <div class="flex flex-col">
-                    <span class="text-xs font-medium text-white">Estudio Creativo</span>
-                    <span class="text-[10px] text-zinc-500">Pro Plan</span>
-                </div>
-            </div>
+            <button onclick="switchView('mockups')" id="nav-mockups" title="Mockups" class="nav-item group relative w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-400 rounded-lg hover:bg-white/[0.06] hover:text-white transition-all">
+                <span class="nav-accent absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3/5 bg-white rounded-r-full opacity-0 transition-opacity group-hover:opacity-100 group-[.active]:opacity-100"></span>
+                <span class="icon-box icon-box--nav shrink-0"><i data-lucide="image"></i></span>
+                <span class="sidebar-text nav-label">Mockups</span>
+            </button>
+
+            <button onclick="switchView('history')" id="nav-history" title="Historial" class="nav-item group relative w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-400 rounded-lg hover:bg-white/[0.06] hover:text-white transition-all">
+                <span class="nav-accent absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3/5 bg-white rounded-r-full opacity-0 transition-opacity group-hover:opacity-100 group-[.active]:opacity-100"></span>
+                <span class="icon-box icon-box--nav shrink-0"><i data-lucide="clock-3"></i></span>
+                <span class="sidebar-text nav-label">Historial</span>
+            </button>
+
+            <div class="sidebar-section-label px-3 mt-6 mb-2 section-label">Configuración</div>
+
+            <button onclick="switchView('settings')" id="nav-settings" title="Ajustes" class="nav-item group relative w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-400 rounded-lg hover:bg-white/[0.06] hover:text-white transition-all">
+                <span class="nav-accent absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3/5 bg-white rounded-r-full opacity-0 transition-opacity group-hover:opacity-100 group-[.active]:opacity-100"></span>
+                <span class="icon-box icon-box--nav shrink-0"><i data-lucide="settings-2"></i></span>
+                <span class="sidebar-text nav-label">Ajustes</span>
+            </button>
         </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 relative h-full overflow-hidden bg-[#0a0a0a]/50 flex flex-col">
-        
-        <!-- Header Top Bar -->
-        <header class="h-20 flex items-center justify-between px-10 border-b border-white/5 glass-panel z-10 shrink-0">
-            <h1 id="header-title" class="text-xl font-medium text-white">Procesador de Pósteres</h1>
-            <div class="flex items-center gap-4">
-                <button class="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors">
-                    <i data-lucide="bell" class="w-5 h-5"></i>
-                </button>
-            </div>
-        </header>
+    <main class="app-main flex-1 relative h-full min-h-0 overflow-hidden flex flex-col">
 
         <!-- Scrollable Content Area -->
-        <div class="flex-1 overflow-y-auto p-10">
+        <div class="app-main-scroll flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+
+            <div class="views-stage" id="viewsStage">
 
             <!-- ================= VIEW: DASHBOARD ================= -->
-            <section id="view-dashboard" class="view-section flex-col gap-8 w-full max-w-6xl mx-auto">
-                <div>
-                    <h2 class="text-3xl font-semibold text-white mb-2">Rendimiento</h2>
-                    <p class="text-zinc-400">Resumen de producción de tu tienda.</p>
+            <section id="view-dashboard" class="view-section flex-col gap-8 w-full max-w-6xl mx-auto stagger-children">
+                <!-- Cabecera con CTA -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl font-semibold text-white tracking-tight mb-1.5">Rendimiento</h1>
+                        <p class="text-sm text-zinc-500">Resumen de producción de tu estudio.</p>
+                    </div>
+                    <button
+                        type="button"
+                        onclick="navigate('processor')"
+                        class="btn-primary shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-black text-sm font-semibold"
+                    >
+                        <i data-lucide="plus" class="icon icon--inline"></i>
+                        <span>Procesar Nuevo Diseño</span>
+                    </button>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Stat Card 1 -->
-                    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
-                        <div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-white/10">
-                            <i data-lucide="image" class="w-5 h-5 text-white"></i>
+                <!-- Tarjetas de métricas -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Tarjeta 1: Diseños Procesados -->
+                    <div class="stat-card glass-panel glass-panel-interactive p-5 rounded-2xl flex flex-col gap-5">
+                        <div class="flex items-center justify-between">
+                            <div class="icon-box icon-box--md icon-box--stat-blue">
+                                <i data-lucide="layers"></i>
+                            </div>
+                            <span class="text-[10px] font-medium text-zinc-600 uppercase tracking-wider">Volumen</span>
                         </div>
                         <div>
-                            <p class="text-sm text-zinc-400 mb-1">Archivos Generados</p>
-                            <h3 id="stat-files" class="text-4xl font-light text-white">0</h3>
+                            <p class="text-xs text-zinc-500 mb-1 font-medium">Diseños Procesados</p>
+                            <h3 id="stat-designs" class="stat-value text-3xl font-semibold text-white tracking-tight tabular-nums">0</h3>
+                            <p id="stat-total-files" class="text-xs text-zinc-600 mt-1.5">Generando un total de 0 archivos</p>
                         </div>
                     </div>
-                    <!-- Stat Card 2 -->
-                    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4 relative overflow-hidden">
-                        <div class="absolute right-0 top-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                        <div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-white/10">
-                            <i data-lucide="hard-drive" class="w-5 h-5 text-white"></i>
+
+                    <!-- Tarjeta 2: Tiempo Ahorrado -->
+                    <div class="stat-card glass-panel glass-panel-interactive p-5 rounded-2xl flex flex-col gap-5">
+                        <div class="flex items-center justify-between">
+                            <div class="icon-box icon-box--md icon-box--stat-amber">
+                                <i data-lucide="timer"></i>
+                            </div>
+                            <span class="text-[10px] font-medium text-zinc-600 uppercase tracking-wider">Eficiencia</span>
                         </div>
                         <div>
-                            <p class="text-sm text-zinc-400 mb-1">Volumen Procesado</p>
-                            <h3 id="stat-volume" class="text-4xl font-light text-white">0 MB</h3>
+                            <p class="text-xs text-zinc-500 mb-1 font-medium">Tiempo Ahorrado</p>
+                            <h3 id="stat-time-saved" class="stat-value text-3xl font-semibold text-white tracking-tight tabular-nums">0m</h3>
+                            <p id="stat-time-hint" class="text-[10px] text-zinc-600 mt-1.5">(Estimación: 5 min/archivo)</p>
                         </div>
                     </div>
-                    <!-- Stat Card 3 -->
-                    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
-                        <div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-white/10">
-                            <i data-lucide="clock" class="w-5 h-5 text-white"></i>
+
+                    <!-- Tarjeta 3: Ratio Favorito -->
+                    <div class="stat-card glass-panel glass-panel-interactive p-5 rounded-2xl flex flex-col gap-5">
+                        <div class="flex items-center justify-between">
+                            <div class="icon-box icon-box--md icon-box--stat-violet">
+                                <i data-lucide="bar-chart-2"></i>
+                            </div>
+                            <span class="text-[10px] font-medium text-zinc-600 uppercase tracking-wider">Top</span>
                         </div>
                         <div>
-                            <p class="text-sm text-zinc-400 mb-1">Tiempo Ahorrado (Aprox)</p>
-                            <h3 id="stat-time" class="text-4xl font-light text-white">0 min</h3>
+                            <p class="text-xs text-zinc-500 mb-1 font-medium">Ratio Favorito</p>
+                            <h3 id="stat-top-format" class="stat-value text-3xl font-semibold text-white tracking-tight">—</h3>
+                            <p id="stat-top-format-pct" class="text-xs text-zinc-600 mt-1.5">Sin datos de uso aún</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="glass-panel p-8 rounded-2xl mt-4">
-                    <h3 class="text-lg font-medium text-white mb-4">Actividad Reciente</h3>
-                    <div id="dashboard-recent" class="flex flex-col gap-4 text-zinc-400 text-sm">
-                        <p class="italic">No hay actividad reciente. Ve al Procesador para empezar.</p>
+                <!-- Últimos Diseños -->
+                <div class="glass-panel rounded-2xl overflow-hidden">
+                    <div class="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-white">Últimos Diseños</h3>
+                        <button onclick="navigate('history')" class="text-xs text-zinc-500 hover:text-white transition-colors font-medium">Ver historial →</button>
+                    </div>
+                    <div id="dashboard-recent" class="divide-y divide-white/[0.04]">
+                        <div id="dashboard-recent-empty" class="px-6 py-12 flex flex-col items-center justify-center text-center">
+                            <span class="icon-box icon-box--lg icon-box--muted mb-4"><i data-lucide="image-off"></i></span>
+                            <p class="text-sm text-zinc-500 font-medium">No hay actividad reciente</p>
+                            <p class="text-xs text-zinc-600 mt-1 max-w-[240px]">Procesa tu primer diseño para ver el historial aquí.</p>
+                        </div>
                     </div>
                 </div>
             </section>
 
             <!-- ================= VIEW: PROCESSOR (TASKS) ================= -->
-            <section id="view-processor" class="view-section active flex-col lg:flex-row gap-8 w-full max-w-7xl mx-auto h-full min-h-[600px]">
-                
+            <section id="view-processor" class="view-section active flex-col lg:flex-row gap-4 lg:gap-6 w-full max-w-7xl mx-auto min-h-0 stagger-children">
+
                 <!-- Left Column: Upload & Preview -->
-                <div class="flex-1 flex flex-col gap-4">
-                    
-                    <!-- Upload Zone (Corregido: Input encima de todo) -->
-                    <div id="uploadZone" class="relative group flex-1 glass-panel rounded-2xl flex flex-col items-center justify-center p-8 transition-all min-h-[300px]">
-                        <div class="dashed-border absolute inset-0 pointer-events-none transition-colors group-hover:border-white/30"></div>
-                        
-                        <!-- Input de archivo: Ocupa todo el espacio, invisible, con el z-index más alto -->
+                <div class="processor-left-col flex-1 flex flex-col gap-4 min-h-0">
+
+                    <!-- Upload Zone -->
+                    <div id="uploadZone" class="processor-upload-panel relative group flex-1 glass-panel rounded-2xl flex flex-col items-center justify-center p-6 sm:p-10 transition-all min-h-[280px] lg:min-h-0 upload-zone-glow">
+                        <div class="dashed-border absolute inset-3 pointer-events-none group-hover:border-white/20"></div>
+
                         <input type="file" id="fileInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50">
-                        
-                        <!-- Contenido visual -->
-                        <div class="w-16 h-16 rounded-full bg-zinc-800/50 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-zinc-700/50 transition-all duration-500 shadow-xl mb-4 pointer-events-none">
-                            <i data-lucide="upload-cloud" class="w-8 h-8 text-zinc-300 group-hover:text-white transition-colors"></i>
+
+                        <div class="icon-box icon-box--xl icon-box--upload mb-5 pointer-events-none">
+                            <i data-lucide="upload-cloud"></i>
                         </div>
                         <div class="text-center pointer-events-none">
-                            <h3 class="text-base font-medium text-white mb-1">Subir Diseño Original</h3>
-                            <p class="text-sm text-zinc-400">Arrastra tu archivo o haz clic en esta área</p>
-                            <p class="text-xs text-zinc-500 mt-2">Soporta JPG, PNG, WEBP (Alta resolución)</p>
+                            <h3 class="text-[15px] font-semibold text-white mb-1.5 tracking-tight">Subir diseño original</h3>
+                            <p class="text-sm text-zinc-500">Arrastra tu archivo o haz clic en esta área</p>
+                            <div class="flex items-center justify-center gap-2 mt-4">
+                                <span class="text-[10px] font-medium text-zinc-600 bg-white/[0.04] border border-white/[0.06] px-2 py-1 rounded-md">JPG</span>
+                                <span class="text-[10px] font-medium text-zinc-600 bg-white/[0.04] border border-white/[0.06] px-2 py-1 rounded-md">PNG</span>
+                                <span class="text-[10px] font-medium text-zinc-600 bg-white/[0.04] border border-white/[0.06] px-2 py-1 rounded-md">WEBP</span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Preview Area -->
-                    <div id="previewContainer" class="hidden flex-1 glass-panel rounded-2xl p-4 flex flex-col min-h-[300px]">
-                        <div class="flex items-center justify-between mb-4 px-2">
-                            <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Vista Previa Original</span>
-                            <span id="originalInfo" class="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded-md"></span>
+                    <div id="previewContainer" class="processor-preview-panel hidden flex-1 glass-panel rounded-2xl flex flex-col min-h-[280px] lg:min-h-0 overflow-hidden panel-fade-in">
+                        <div class="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+                            <div class="flex items-center gap-2">
+                                <span class="icon-box icon-box--panel"><i data-lucide="eye"></i></span>
+                                <span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Vista previa</span>
+                            </div>
+                            <span id="originalInfo" class="text-[10px] font-mono text-zinc-500 bg-white/[0.04] border border-white/[0.06] px-2.5 py-1 rounded-md"></span>
                         </div>
-                        <div class="flex-1 relative rounded-xl overflow-hidden bg-zinc-950 border border-white/5 flex items-center justify-center p-4">
-                            <img id="imagePreview" class="max-w-full max-h-full object-contain filter drop-shadow-2xl" src="" alt="Preview">
+                        <div class="flex-1 relative min-h-0 bg-[#080808] flex items-center justify-center p-4 sm:p-6 m-3 sm:m-4 rounded-xl border border-white/[0.06]">
+                            <img id="imagePreview" class="max-w-full max-h-full object-contain drop-shadow-2xl rounded-sm" src="" alt="Preview">
                         </div>
-                        <button id="resetBtn" class="mt-4 py-3 px-4 rounded-xl border border-white/10 text-white hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
-                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                            Subir otra imagen
-                        </button>
+                        <div class="px-5 pb-5">
+                            <button id="resetBtn" class="w-full py-2.5 px-4 rounded-xl border border-white/[0.08] text-zinc-300 hover:text-white hover:bg-white/[0.04] hover:border-white/15 transition-all flex items-center justify-center gap-2 text-sm font-medium">
+                                <i data-lucide="refresh-cw" class="icon icon--inline"></i>
+                                Subir otra imagen
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Right Column: Settings -->
-                <div class="w-full lg:w-[400px] flex flex-col gap-6 relative">
+                <div class="processor-settings-col w-full lg:w-[380px] flex flex-col gap-3 lg:gap-4 relative shrink-0 min-h-0">
                     <!-- Overlay to block settings if no image -->
-                    <div id="settingsOverlay" class="absolute inset-0 bg-[#0a0a0a]/80 backdrop-blur-[2px] z-10 rounded-2xl flex flex-col items-center justify-center text-center p-8 transition-opacity duration-300">
-                        <i data-lucide="lock" class="w-6 h-6 text-zinc-500 mb-3"></i>
-                        <p class="text-zinc-400 text-sm">Sube un diseño para desbloquear los ajustes de producción.</p>
+                    <div id="settingsOverlay" class="overlay-fade absolute inset-0 bg-[#090909]/90 backdrop-blur-sm z-10 rounded-2xl flex flex-col items-center justify-center text-center p-8">
+                        <div class="icon-box icon-box--lg icon-box--muted mb-4">
+                            <i data-lucide="lock"></i>
+                        </div>
+                        <p class="text-sm font-medium text-zinc-400 mb-1">Ajustes bloqueados</p>
+                        <p class="text-xs text-zinc-600 max-w-[200px]">Sube un diseño para configurar la producción.</p>
                     </div>
 
                     <!-- Format Selection -->
-                    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-white font-medium">Ratios de Impresión</h3>
-                            <span class="text-xs text-zinc-500">Multiselección</span>
+                    <div class="glass-panel rounded-2xl overflow-hidden">
+                        <div class="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-white">Ratios de impresión</h3>
+                            <span class="text-[10px] font-medium text-zinc-600 bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 rounded-md">Multiselección</span>
                         </div>
-                        
-                        <div class="grid grid-cols-2 gap-3">
-                            <!-- Ratio Cards -->
-                            <button class="format-card relative p-4 rounded-xl border border-white/10 bg-zinc-800/30 text-left overflow-hidden flex flex-col gap-1" data-format="2:3">
-                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded border border-white/20 flex items-center justify-center transition-colors"><i data-lucide="check" class="format-check-icon w-3 h-3 opacity-0 transition-opacity"></i></div>
-                                <span class="text-white font-medium block">Ratio 2:3</span>
-                                <span class="text-[10px] text-zinc-500">Ej: 24x36", 20x30", 16x24"</span>
+                        <div class="p-4 grid grid-cols-2 gap-2">
+                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="2:3">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
+                                <span class="text-[13px] text-white font-medium block">Ratio 2:3</span>
+                                <span class="text-[10px] text-zinc-600 leading-tight">24×36", 20×30"</span>
                             </button>
-                            <button class="format-card relative p-4 rounded-xl border border-white/10 bg-zinc-800/30 text-left overflow-hidden flex flex-col gap-1" data-format="3:4">
-                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded border border-white/20 flex items-center justify-center transition-colors"><i data-lucide="check" class="format-check-icon w-3 h-3 opacity-0 transition-opacity"></i></div>
-                                <span class="text-white font-medium block">Ratio 3:4</span>
-                                <span class="text-[10px] text-zinc-500">Ej: 18x24", 15x20", 12x16"</span>
+                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="3:4">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
+                                <span class="text-[13px] text-white font-medium block">Ratio 3:4</span>
+                                <span class="text-[10px] text-zinc-600 leading-tight">18×24", 15×20"</span>
                             </button>
-                            <button class="format-card relative p-4 rounded-xl border border-white/10 bg-zinc-800/30 text-left overflow-hidden flex flex-col gap-1" data-format="4:5">
-                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded border border-white/20 flex items-center justify-center transition-colors"><i data-lucide="check" class="format-check-icon w-3 h-3 opacity-0 transition-opacity"></i></div>
-                                <span class="text-white font-medium block">Ratio 4:5</span>
-                                <span class="text-[10px] text-zinc-500">Ej: 16x20", 8x10", 4x5"</span>
+                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="4:5">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
+                                <span class="text-[13px] text-white font-medium block">Ratio 4:5</span>
+                                <span class="text-[10px] text-zinc-600 leading-tight">16×20", 8×10"</span>
                             </button>
-                            <button class="format-card relative p-4 rounded-xl border border-white/10 bg-zinc-800/30 text-left overflow-hidden flex flex-col gap-1" data-format="11:14">
-                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded border border-white/20 flex items-center justify-center transition-colors"><i data-lucide="check" class="format-check-icon w-3 h-3 opacity-0 transition-opacity"></i></div>
-                                <span class="text-white font-medium block">11:14 Pulgadas</span>
-                                <span class="text-[10px] text-zinc-500">Estándar americano</span>
+                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="11:14">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
+                                <span class="text-[13px] text-white font-medium block">11:14"</span>
+                                <span class="text-[10px] text-zinc-600 leading-tight">Estándar americano</span>
                             </button>
-                            <button class="format-card relative p-4 rounded-xl border border-white/10 bg-zinc-800/30 text-left overflow-hidden flex flex-col gap-1" data-format="A-Series">
-                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded border border-white/20 flex items-center justify-center transition-colors"><i data-lucide="check" class="format-check-icon w-3 h-3 opacity-0 transition-opacity"></i></div>
-                                <span class="text-white font-medium block">ISO (Serie A)</span>
-                                <span class="text-[10px] text-zinc-500">A1, A2, A3, A4, 50x70cm</span>
+                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="A-Series">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
+                                <span class="text-[13px] text-white font-medium block">ISO Serie A</span>
+                                <span class="text-[10px] text-zinc-600 leading-tight">A1–A4, 50×70 cm</span>
                             </button>
-                            <button class="format-card relative p-4 rounded-xl border border-white/10 bg-zinc-800/30 text-left overflow-hidden flex flex-col gap-1" data-format="1:1">
-                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded border border-white/20 flex items-center justify-center transition-colors"><i data-lucide="check" class="format-check-icon w-3 h-3 opacity-0 transition-opacity"></i></div>
-                                <span class="text-white font-medium block">Cuadrado (1:1)</span>
-                                <span class="text-[10px] text-zinc-500">Cualquier tamaño simétrico</span>
+                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="1:1">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
+                                <span class="text-[13px] text-white font-medium block">Cuadrado 1:1</span>
+                                <span class="text-[10px] text-zinc-600 leading-tight">Tamaño simétrico</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- Crop Alignment -->
-                    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
-                        <h3 class="text-white font-medium">Alineación del Recorte</h3>
-                        <div class="grid grid-cols-3 gap-2">
-                            <button type="button" class="align-btn px-3 py-2.5 rounded-xl border border-white/10 bg-zinc-800/30 text-zinc-400 hover:text-white hover:border-white/20 text-xs font-medium" data-alignment="top">Superior</button>
-                            <button type="button" class="align-btn active px-3 py-2.5 rounded-xl border border-white/10 bg-zinc-800/30 text-zinc-400 hover:text-white hover:border-white/20 text-xs font-medium" data-alignment="center">Centro</button>
-                            <button type="button" class="align-btn px-3 py-2.5 rounded-xl border border-white/10 bg-zinc-800/30 text-zinc-400 hover:text-white hover:border-white/20 text-xs font-medium" data-alignment="bottom">Inferior</button>
+                    <div class="glass-panel rounded-2xl overflow-hidden">
+                        <div class="px-5 py-4 border-b border-white/[0.06]">
+                            <h3 class="text-sm font-semibold text-white">Alineación del recorte</h3>
+                        </div>
+                        <div class="p-4 grid grid-cols-3 gap-2">
+                            <button type="button" class="align-btn px-3 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-zinc-500 hover:text-white hover:border-white/15 text-xs font-medium" data-alignment="top">Superior</button>
+                            <button type="button" class="align-btn active px-3 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-zinc-500 hover:text-white hover:border-white/15 text-xs font-medium" data-alignment="center">Centro</button>
+                            <button type="button" class="align-btn px-3 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-zinc-500 hover:text-white hover:border-white/15 text-xs font-medium" data-alignment="bottom">Inferior</button>
                         </div>
                     </div>
 
                     <!-- Scale -->
-                    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-6">
-                        <div class="flex flex-col gap-3">
-                            <div class="flex items-center justify-between">
-                                <label class="text-white font-medium">Multiplicador de Resolución</label>
-                                <span id="scaleValue" class="text-white bg-white/10 px-2 py-0.5 rounded text-xs font-mono">1.0x</span>
-                            </div>
+                    <div class="glass-panel rounded-2xl overflow-hidden">
+                        <div class="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-white">Multiplicador de resolución</h3>
+                            <span id="scaleValue" class="text-xs font-mono text-white bg-white/[0.08] border border-white/[0.08] px-2 py-0.5 rounded-md tabular-nums">1.0×</span>
+                        </div>
+                        <div class="p-5 flex flex-col gap-3">
                             <input type="range" id="scaleSlider" min="1" max="3" step="0.5" value="1">
-                            <p id="resolutionEstimate" class="text-[10px] text-zinc-400 leading-tight">Selecciona un ratio para ver la resolución estimada.</p>
+                            <p id="resolutionEstimate" class="text-[11px] text-zinc-600 leading-relaxed">Selecciona un ratio para ver la resolución estimada.</p>
                         </div>
                     </div>
 
-                    <button id="processBtn" disabled class="w-full py-4 rounded-xl bg-white text-black font-semibold hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                        <i data-lucide="cpu" class="w-5 h-5"></i>
-                        <span>Generar Archivos</span>
+                    <button id="processBtn" disabled class="btn-primary w-full py-3.5 rounded-xl text-black font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2">
+                        <i data-lucide="sparkles" class="icon icon--inline"></i>
+                        <span>Generar archivos</span>
                     </button>
 
                     <!-- Results Area -->
-                    <div id="resultsArea" class="glass-panel p-6 rounded-2xl flex-col gap-4 hidden">
-                        <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                            <h3 class="text-white font-medium">Archivos Listos</h3>
-                            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+                    <div id="resultsArea" class="glass-panel rounded-2xl flex-col hidden overflow-hidden">
+                        <div class="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-white">Archivos listos</h3>
+                            <div class="flex items-center gap-1.5 text-emerald-400">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                <span class="text-[10px] font-semibold uppercase tracking-wider">Completo</span>
+                            </div>
                         </div>
-                        <div id="downloadList" class="flex flex-col gap-3 mt-3">
+                        <div id="downloadList" class="flex flex-col gap-2 p-4">
                             <!-- Inyectado por JS -->
                         </div>
-                        <button id="downloadAllBtn" class="w-full py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-medium hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-2 mt-1">
-                            <i data-lucide="archive" class="w-4 h-4"></i>
-                            <span>Descargar Todo (.ZIP)</span>
+                        <div class="px-4 pb-4">
+                            <button id="downloadAllBtn" class="w-full py-2.5 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/15 hover:border-emerald-500/30 transition-all flex items-center justify-center gap-2">
+                                <span class="icon-box icon-box--sm icon-box--success-soft"><i data-lucide="archive"></i></span>
+                                <span>Descargar todo (.ZIP)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW: MOCKUPS 3D ================= -->
+            <section id="view-mockups" class="view-section flex-col lg:flex-row gap-4 lg:gap-6 w-full max-w-7xl mx-auto min-h-0 stagger-children">
+                <div class="mockups-left-col w-full lg:flex-1 flex flex-col gap-3 lg:gap-4 min-h-0">
+                    <div class="shrink-0">
+                        <h2 class="text-xl lg:text-2xl font-semibold text-white tracking-tight mb-1">Mockups 3D</h2>
+                        <p class="text-sm text-zinc-500 leading-relaxed">Genera imágenes de producto para tus listings usando plantillas PSD con Objetos Inteligentes.</p>
+                    </div>
+
+                    <!-- Poster upload -->
+                    <div class="glass-panel rounded-2xl overflow-hidden shrink-0">
+                        <div class="px-5 py-3.5 border-b border-white/[0.06] flex items-center gap-2">
+                            <span class="icon-box icon-box--panel"><i data-lucide="upload"></i></span>
+                            <h3 class="text-sm font-semibold text-white">Póster procesado</h3>
+                        </div>
+                        <div id="mockupPosterZone" class="mockup-poster-zone relative group m-3 sm:m-4 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.02] min-h-[160px] flex flex-col items-center justify-center p-6 sm:p-8 transition-all hover:border-white/20 hover:bg-white/[0.03]">
+                            <input type="file" id="mockupPosterInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                            <div id="mockupPosterPlaceholder" class="text-center pointer-events-none">
+                                <span class="icon-box icon-box--lg icon-box--muted mx-auto mb-4"><i data-lucide="image-plus"></i></span>
+                                <p class="text-sm font-medium text-white mb-1">Arrastra tu póster exportado</p>
+                                <p class="text-xs text-zinc-600">JPG, PNG o WEBP · Idealmente desde el Procesador</p>
+                            </div>
+                            <div id="mockupPosterPreview" class="hidden w-full flex flex-col items-center gap-3">
+                                <img id="mockupPosterImage" src="" alt="Póster" class="max-h-48 max-w-full object-contain rounded-lg border border-white/[0.08]">
+                                <p id="mockupPosterName" class="text-xs text-zinc-500 font-medium truncate max-w-full"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PSD template -->
+                    <div class="glass-panel rounded-2xl overflow-hidden shrink-0">
+                        <div class="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-white">Plantilla de maqueta</h3>
+                            <span class="text-[10px] font-medium text-zinc-600 bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 rounded-md">.PSD</span>
+                        </div>
+                        <div class="p-3 sm:p-4 flex flex-col gap-3">
+                            <div class="grid grid-cols-2 gap-2" id="mockupTemplateGrid">
+                                <button type="button" class="mockup-template-card format-card relative p-3 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-template="wood-frame">
+                                    <span class="text-[13px] text-white font-medium">Marco Madera</span>
+                                    <span class="text-[10px] text-zinc-600 leading-tight">Estilo cálido · salón</span>
+                                </button>
+                                <button type="button" class="mockup-template-card format-card relative p-3 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-template="black-frame">
+                                    <span class="text-[13px] text-white font-medium">Marco Negro</span>
+                                    <span class="text-[10px] text-zinc-600 leading-tight">Minimal · galería</span>
+                                </button>
+                                <button type="button" class="mockup-template-card format-card relative p-3 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-template="white-wall">
+                                    <span class="text-[13px] text-white font-medium">Pared Blanca</span>
+                                    <span class="text-[10px] text-zinc-600 leading-tight">Ambiente luminoso</span>
+                                </button>
+                                <button type="button" class="mockup-template-card format-card active-card relative p-3 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-template="custom">
+                                    <span class="text-[13px] text-white font-medium">Personalizado</span>
+                                    <span class="text-[10px] text-zinc-600 leading-tight">Sube tu propio .psd</span>
+                                </button>
+                            </div>
+                            <div id="mockupPsdDropZone" class="relative rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 sm:p-4 flex items-center gap-3 hover:border-white/15 transition-all">
+                                <input type="file" id="mockupPsdInput" accept=".psd,application/vnd.adobe.photoshop,image/vnd.adobe.photoshop" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                                <span class="icon-box icon-box--md icon-box--muted shrink-0"><i data-lucide="layers"></i></span>
+                                <div class="min-w-0 flex-1">
+                                    <p id="mockupPsdLabel" class="text-sm text-zinc-300 font-medium truncate">Seleccionar archivo .psd</p>
+                                    <p class="text-[11px] text-zinc-600 mt-0.5">Capa inteligente con nombre tipo design, poster, mockup o replace</p>
+                                </div>
+                                <i data-lucide="folder-open" class="icon icon--sm text-zinc-600 shrink-0"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Generate & Results -->
+                <div class="mockups-right-col w-full lg:w-[380px] xl:w-[420px] flex flex-col gap-3 lg:gap-4 shrink-0 min-h-0">
+                    <div class="mockups-generate-panel glass-panel rounded-2xl p-4 sm:p-5 flex flex-col gap-3 sm:gap-4 shrink-0">
+                        <div class="flex items-start gap-3">
+                            <span class="icon-box icon-box--md icon-box--brand shrink-0"><i data-lucide="sparkles"></i></span>
+                            <div class="min-w-0">
+                                <h3 class="text-sm font-semibold text-white">Generación automática</h3>
+                                <p class="text-xs text-zinc-600 mt-1 leading-relaxed">Photopea procesará tu PSD, insertará el póster en el Objeto Inteligente y exportará un JPG de alta calidad.</p>
+                            </div>
+                        </div>
+                        <button id="mockupGenerateBtn" disabled class="btn-primary w-full py-3 rounded-xl text-black font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2">
+                            <i data-lucide="wand-2" class="icon icon--inline"></i>
+                            <span>Generar Mockup de Alta Calidad</span>
                         </button>
+                        <p id="mockupStatusText" class="text-[11px] text-zinc-600 text-center leading-relaxed">Sube un póster y un archivo .psd para comenzar.</p>
+                    </div>
+
+                    <div class="mockups-gallery-panel glass-panel rounded-2xl overflow-hidden flex flex-col">
+                        <div class="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+                            <h3 class="text-sm font-semibold text-white">Galería de resultados</h3>
+                            <span id="mockupResultsCount" class="text-[10px] font-mono text-zinc-600 bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 rounded-md tabular-nums">0</span>
+                        </div>
+                        <div class="mockups-gallery-body p-3 sm:p-4">
+                            <div id="mockupGalleryEmpty" class="min-h-[140px] lg:min-h-[120px] flex flex-col items-center justify-center text-center py-6">
+                                <span class="icon-box icon-box--lg icon-box--muted mb-3"><i data-lucide="images"></i></span>
+                                <p class="text-sm text-zinc-500 font-medium">Sin mockups generados</p>
+                                <p class="text-xs text-zinc-600 mt-1 max-w-[220px]">Los resultados aparecerán aquí listos para descargar.</p>
+                            </div>
+                            <div id="mockupGallery" class="mockup-gallery-grid hidden"></div>
+                        </div>
                     </div>
                 </div>
             </section>
 
             <!-- ================= VIEW: HISTORY ================= -->
-            <section id="view-history" class="view-section flex-col gap-6 w-full max-w-4xl mx-auto">
+            <section id="view-history" class="view-section flex-col gap-6 w-full max-w-4xl mx-auto stagger-children">
                 <div>
-                    <h2 class="text-2xl font-semibold text-white">Historial de Producción</h2>
-                    <p class="text-zinc-400 mt-1">Registro de los últimos archivos procesados.</p>
+                    <h2 class="text-2xl font-semibold text-white tracking-tight mb-1.5">Historial de producción</h2>
+                    <p class="text-sm text-zinc-500">Registro de los últimos archivos procesados.</p>
                 </div>
-                <div class="glass-panel p-2 rounded-2xl">
-                    <div id="history-list" class="flex flex-col">
-                        <div class="p-8 text-center text-zinc-500">Aún no has procesado ninguna imagen.</div>
+
+                <!-- Barra de filtros y búsqueda -->
+                <div id="history-toolbar" class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative flex-1">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
+                            <i data-lucide="search" class="icon icon--sm"></i>
+                        </span>
+                        <input
+                            id="history-search"
+                            type="search"
+                            placeholder="Search..."
+                            autocomplete="off"
+                            class="w-full bg-white/[0.03] border border-white/[0.08] text-white text-sm rounded-xl pl-10 pr-4 py-2.5 outline-none focus:border-white/20 transition-colors placeholder:text-zinc-600"
+                        >
+                    </div>
+                    <select
+                        id="history-ratio-filter"
+                        class="sm:w-44 bg-white/[0.03] border border-white/[0.08] text-white text-sm rounded-xl px-4 py-2.5 outline-none focus:border-white/20 transition-colors appearance-none cursor-pointer"
+                    >
+                        <option value="all">Todos los Ratios</option>
+                        <option value="2:3">2:3</option>
+                        <option value="3:4">3:4</option>
+                        <option value="4:5">4:5</option>
+                        <option value="11:14">11:14</option>
+                        <option value="A-Series">ISO</option>
+                        <option value="1:1">1:1</option>
+                    </select>
+                    <button
+                        id="history-clear-btn"
+                        type="button"
+                        onclick="clearHistory()"
+                        class="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-red-400 bg-red-500/[0.08] border border-red-500/20 hover:bg-red-500/15 hover:border-red-500/30 transition-all"
+                    >
+                        <i data-lucide="trash-2" class="icon icon--sm"></i>
+                        <span>Vaciar Historial</span>
+                    </button>
+                </div>
+
+                <!-- Estado vacío -->
+                <div id="history-empty" class="hidden glass-panel rounded-2xl">
+                    <div class="px-6 py-16 flex flex-col items-center justify-center text-center panel-fade-in">
+                        <span class="icon-box icon-box--lg icon-box--muted">
+                            <i data-lucide="history"></i>
+                        </span>
+                        <p class="text-sm text-zinc-400 font-medium mt-5">No se han procesado pósteres aún</p>
+                        <p class="text-xs text-zinc-600 mt-1.5 max-w-[280px]">Los diseños exportados desde el procesador aparecerán aquí con sus ratios y descargas.</p>
+                        <button
+                            type="button"
+                            onclick="navigate('processor')"
+                            class="btn-primary mt-6 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-black text-sm font-semibold"
+                        >
+                            <i data-lucide="arrow-right" class="icon icon--inline"></i>
+                            <span>Ir al Procesador</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lista de historial -->
+                <div id="history-panel" class="glass-panel rounded-2xl overflow-hidden">
+                    <div id="history-list" class="flex flex-col divide-y divide-white/[0.04]"></div>
+                    <div id="history-no-results" class="hidden px-6 py-12 text-center text-sm text-zinc-600 panel-fade-in">
+                        No hay resultados para los filtros aplicados.
                     </div>
                 </div>
             </section>
 
             <!-- ================= VIEW: SETTINGS ================= -->
-            <section id="view-settings" class="view-section flex-col gap-6 w-full max-w-2xl mx-auto">
-                <div>
-                    <h2 class="text-2xl font-semibold text-white">Ajustes del Sistema</h2>
-                    <p class="text-zinc-400 mt-1">Configuración global de exportación.</p>
-                </div>
-                
-                <div class="glass-panel p-6 rounded-2xl flex flex-col gap-6">
-                    <div>
-                        <h3 class="text-white font-medium mb-3">Formato de Exportación</h3>
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-2 text-zinc-300 cursor-pointer">
-                                <input type="radio" name="export-fmt" checked class="accent-white"> JPEG (Alta Calidad)
-                            </label>
-                            <label class="flex items-center gap-2 text-zinc-500 cursor-not-allowed" title="Próximamente">
-                                <input type="radio" name="export-fmt" disabled class="accent-white"> PNG
-                            </label>
-                        </div>
+            <section id="view-settings" class="view-section flex-col gap-6 w-full max-w-2xl mx-auto stagger-children">
+                <p class="text-sm text-zinc-500">Configuración global de exportación y preferencias del estudio.</p>
+
+                <div class="glass-panel rounded-2xl overflow-hidden">
+                    <div class="px-6 py-4 border-b border-white/[0.06]">
+                        <h3 class="text-sm font-semibold text-white">Exportación</h3>
+                        <p class="text-xs text-zinc-600 mt-1">Formato, calidad y nomenclatura de archivos.</p>
                     </div>
-                    <div class="h-px w-full bg-white/10"></div>
-                    <div>
-                        <h3 class="text-white font-medium mb-3">Perfil de Color (Simulado)</h3>
-                        <select class="w-full bg-zinc-900 border border-white/10 text-white rounded-lg p-3 outline-none focus:border-white/30">
-                            <option>sRGB (Recomendado para Web/General)</option>
-                            <option>Adobe RGB (1998)</option>
-                            <option>CMYK Coated FOGRA39 (Requiere Pro)</option>
-                        </select>
+                    <div class="p-6 flex flex-col gap-6">
+                        <div>
+                            <p class="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wider">Formato</p>
+                            <div class="flex gap-3">
+                                <label class="flex items-center gap-2.5 text-sm text-zinc-300 cursor-pointer px-4 py-2.5 rounded-xl bg-white/[0.06] border border-white/15">
+                                    <input type="radio" name="export-fmt" checked class="accent-white"> JPEG · Alta calidad
+                                </label>
+                                <label class="flex items-center gap-2.5 text-sm text-zinc-600 cursor-not-allowed px-4 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06]" title="Próximamente">
+                                    <input type="radio" name="export-fmt" disabled class="accent-white"> PNG
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="h-px w-full bg-white/[0.06]"></div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-xs font-medium text-zinc-500 uppercase tracking-wider">Compresión JPEG</p>
+                                <span id="jpegQualityValue" class="text-xs font-mono text-white bg-white/[0.08] border border-white/[0.08] px-2 py-0.5 rounded-md tabular-nums">95%</span>
+                            </div>
+                            <input type="range" id="jpegQualitySlider" min="80" max="100" step="1" value="95" class="w-full">
+                            <p class="text-[11px] text-zinc-600 mt-2">Mayor calidad = archivos más pesados. Recomendado: 95% para impresión.</p>
+                        </div>
+
+                        <div class="h-px w-full bg-white/[0.06]"></div>
+
+                        <div>
+                            <p class="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wider">Unidad de medida</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="unitCmBtn" data-unit="cm" class="settings-toggle-btn active px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-zinc-400 text-sm font-medium">
+                                    Centímetros (cm)
+                                </button>
+                                <button type="button" id="unitInBtn" data-unit="in" class="settings-toggle-btn px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-zinc-400 text-sm font-medium">
+                                    Pulgadas (in)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="h-px w-full bg-white/[0.06]"></div>
+
+                        <div>
+                            <p class="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wider">Nomenclatura de archivos</p>
+                            <input
+                                type="text"
+                                id="fileNamePattern"
+                                value="[NombreOriginal]_[Ratio]"
+                                spellcheck="false"
+                                class="w-full bg-white/[0.03] border border-white/[0.08] text-white text-sm rounded-xl px-4 py-3 outline-none focus:border-white/20 transition-colors font-mono"
+                            >
+                            <p class="text-[11px] text-zinc-600 mt-2 leading-relaxed">
+                                Variables: <span class="text-zinc-500">[NombreOriginal]</span>, <span class="text-zinc-500">[Ratio]</span>, <span class="text-zinc-500">[Ancho]</span>, <span class="text-zinc-500">[Alto]</span>, <span class="text-zinc-500">[Dimensiones]</span>
+                            </p>
+                        </div>
+
+                        <div class="h-px w-full bg-white/[0.06]"></div>
+
+                        <div>
+                            <p class="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wider">Perfil de color</p>
+                            <select id="colorProfileSelect" class="w-full bg-white/[0.03] border border-white/[0.08] text-white text-sm rounded-xl px-4 py-3 outline-none focus:border-white/20 transition-colors appearance-none cursor-pointer">
+                                <option>sRGB — Recomendado para web</option>
+                                <option>Adobe RGB (1998)</option>
+                                <option>CMYK Coated FOGRA39 (Pro)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div class="glass-panel p-6 rounded-2xl border-red-900/30 flex flex-col gap-4 mt-4">
-                    <h3 class="text-red-400 font-medium">Zona Peligrosa</h3>
-                    <button onclick="clearStats()" class="py-2 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors text-left w-max">
-                        Borrar todos los datos y estadísticas
-                    </button>
+                <div class="glass-panel rounded-2xl overflow-hidden border border-red-500/20">
+                    <div class="px-6 py-4 border-b border-red-500/20 bg-red-500/[0.04]">
+                        <div class="flex items-center gap-2">
+                            <span class="icon-box icon-box--sm" style="background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2);">
+                                <i data-lucide="alert-triangle" class="icon icon--sm" style="color: #f87171;"></i>
+                            </span>
+                            <h3 class="text-sm font-semibold text-red-400">Zona peligrosa</h3>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-xs text-zinc-500 mb-4 leading-relaxed">Elimina permanentemente el historial de producción, las métricas acumuladas y los archivos archivados en el navegador.</p>
+                        <button
+                            type="button"
+                            onclick="openClearDataModal()"
+                            class="py-2.5 px-4 bg-red-500/[0.08] hover:bg-red-500/15 text-red-400 border border-red-500/20 hover:border-red-500/30 rounded-xl transition-all text-sm font-medium"
+                        >
+                            Borrar todos los datos
+                        </button>
+                    </div>
                 </div>
             </section>
+
+            </div>
 
         </div>
     </main>
@@ -504,24 +1952,582 @@
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
+    <!-- Modal: Confirmar borrado de datos -->
+    <div id="clearDataModal" class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="clearDataModalTitle">
+        <div class="modal-panel glass-panel rounded-2xl w-full max-w-md overflow-hidden border border-red-500/20 shadow-premium-lg">
+            <div class="px-6 py-5 border-b border-red-500/20 bg-red-500/[0.04]">
+                <div class="flex items-start gap-3">
+                    <span class="icon-box icon-box--md shrink-0" style="background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2);">
+                        <i data-lucide="alert-triangle" class="icon icon--md" style="color: #f87171;"></i>
+                    </span>
+                    <div>
+                        <h3 id="clearDataModalTitle" class="text-base font-semibold text-white">¿Estás seguro?</h3>
+                        <p class="text-sm text-zinc-500 mt-1.5 leading-relaxed">Esta acción borrará el historial y las métricas acumuladas.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <button
+                    type="button"
+                    onclick="closeClearDataModal()"
+                    class="py-2.5 px-4 rounded-xl text-sm font-medium text-zinc-400 border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] hover:text-white transition-all"
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    onclick="confirmClearData()"
+                    class="py-2.5 px-4 rounded-xl text-sm font-medium text-red-400 bg-red-500/[0.12] border border-red-500/25 hover:bg-red-500/20 hover:border-red-500/35 transition-all"
+                >
+                    Sí, borrar todo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photopea API (motor oculto de mockups; src se asigna en JS con hash de configuración) -->
+    <iframe id="photopea-frame" title="Photopea Engine" class="fixed top-0 left-[-9999px] w-[800px] h-[600px] border-0"></iframe>
+
     <script>
-        // Inicializar Iconos
-        lucide.createIcons();
+        // ─── Premium Icon System ───
+        function icon(name, box = '', iconClass = '') {
+            const boxClass = box ? `icon-box ${box}` : '';
+            const inner = `<i data-lucide="${name}" class="icon ${iconClass}"></i>`;
+            return boxClass ? `<span class="${boxClass}">${inner}</span>` : inner;
+        }
+
+        function initIcons(root) {
+            const options = {
+                attrs: {
+                    'stroke-width': 1.5,
+                    'stroke-linecap': 'round',
+                    'stroke-linejoin': 'round'
+                }
+            };
+            if (root) {
+                lucide.createIcons({ ...options, root });
+            } else {
+                lucide.createIcons(options);
+            }
+        }
+
+        initIcons();
+
+        // --- Photopea Engine (registro temprano del listener) ---
+        const PHOTOPEA_ENGINE_URL = 'https://www.photopea.com#' + encodeURIComponent(JSON.stringify({
+            environment: { intro: false, lang: 'es' }
+        }));
+
+        const photopeaBridge = {
+            frame: null,
+            ready: false,
+            readyPromise: null,
+            readyResolve: null,
+            readyReject: null,
+            readyTimeoutId: null,
+            busy: false,
+            pendingDone: null,
+            pendingBuffer: null,
+            lastEcho: null,
+            timeoutId: null
+        };
+
+        function normalizePhotopeaBuffer(data) {
+            if (data instanceof ArrayBuffer) return data;
+            if (ArrayBuffer.isView(data)) {
+                return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+            }
+            return null;
+        }
+
+        function handlePhotopeaMessage(event) {
+            const frame = photopeaBridge.frame || document.getElementById('photopea-frame');
+            if (!frame?.contentWindow || event.source !== frame.contentWindow) return;
+
+            const data = event.data;
+            const buffer = normalizePhotopeaBuffer(data);
+            if (buffer) {
+                photopeaBridge.pendingBuffer = buffer;
+                console.log('[Photopea] ArrayBuffer recibido:', buffer.byteLength, 'bytes');
+                return;
+            }
+
+            if (typeof data !== 'string') return;
+
+            if (data !== 'done') {
+                photopeaBridge.lastEcho = data;
+                console.log('[Photopea] echo:', data);
+                return;
+            }
+
+            console.log('[Photopea] "done" recibido');
+
+            if (!photopeaBridge.ready) {
+                photopeaBridge.ready = true;
+                console.log('[Photopea] Bridge ready (primer "done")');
+                if (photopeaBridge.readyResolve) {
+                    clearTimeout(photopeaBridge.readyTimeoutId);
+                    photopeaBridge.readyResolve();
+                    photopeaBridge.readyResolve = null;
+                    photopeaBridge.readyReject = null;
+                }
+            }
+
+            if (photopeaBridge.pendingDone) {
+                const resolve = photopeaBridge.pendingDone;
+                clearTimeout(photopeaBridge.timeoutId);
+                photopeaBridge.pendingDone = null;
+                photopeaBridge.timeoutId = null;
+                resolve({
+                    buffer: photopeaBridge.pendingBuffer,
+                    echo: photopeaBridge.lastEcho
+                });
+                photopeaBridge.pendingBuffer = null;
+                photopeaBridge.lastEcho = null;
+                photopeaBridge.busy = false;
+            }
+        }
+
+        window.addEventListener('message', handlePhotopeaMessage);
+
+        function bootstrapPhotopeaEngine() {
+            const frame = document.getElementById('photopea-frame');
+            if (!frame) return;
+            photopeaBridge.frame = frame;
+            if (frame.dataset.photopeaConfigured !== 'true') {
+                frame.src = PHOTOPEA_ENGINE_URL;
+                frame.dataset.photopeaConfigured = 'true';
+            }
+        }
+
+        bootstrapPhotopeaEngine();
 
         // Estado Global
         const state = {
             file: null,
             imgElement: null,
+            previewObjectUrl: null,
             selectedFormats: new Set(),
             scaleFactor: 1.0,
             cropAlignment: 'center',
             generatedFiles: [],
             stats: {
-                filesProcessed: 0,
+                designsProcessed: 0,
+                totalFilesGenerated: 0,
                 bytesProcessed: 0,
+                formatUsage: {},
+                recentDesigns: [],
                 history: []
+            },
+            settings: {
+                jpegQuality: 0.95,
+                measureUnit: 'cm',
+                fileNamePattern: '[NombreOriginal]_[Ratio]'
+            },
+            mockup: {
+                posterDataUrl: null,
+                posterFile: null,
+                psdFile: null,
+                selectedTemplateId: 'custom',
+                generating: false,
+                progressText: null,
+                results: []
             }
         };
+
+        const SETTINGS_STORAGE_KEY = 'posterProSettings';
+        const DEFAULT_SETTINGS = {
+            jpegQuality: 0.95,
+            measureUnit: 'cm',
+            fileNamePattern: '[NombreOriginal]_[Ratio]'
+        };
+
+        function loadSettings() {
+            const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+            if (saved) {
+                state.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+            }
+            syncSettingsUI();
+        }
+
+        function saveSettings() {
+            localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(state.settings));
+        }
+
+        function getJpegQuality() {
+            return state.settings.jpegQuality;
+        }
+
+        function syncSettingsUI() {
+            const qualityPct = Math.round(state.settings.jpegQuality * 100);
+            const slider = document.getElementById('jpegQualitySlider');
+            const qualityLabel = document.getElementById('jpegQualityValue');
+            const patternInput = document.getElementById('fileNamePattern');
+            const unitCmBtn = document.getElementById('unitCmBtn');
+            const unitInBtn = document.getElementById('unitInBtn');
+
+            if (slider) slider.value = qualityPct;
+            if (qualityLabel) qualityLabel.textContent = `${qualityPct}%`;
+            if (patternInput) patternInput.value = state.settings.fileNamePattern;
+
+            if (unitCmBtn && unitInBtn) {
+                unitCmBtn.classList.toggle('active', state.settings.measureUnit === 'cm');
+                unitInBtn.classList.toggle('active', state.settings.measureUnit === 'in');
+            }
+        }
+
+        function setMeasureUnit(unit) {
+            state.settings.measureUnit = unit;
+            saveSettings();
+            syncSettingsUI();
+            updateResolutionEstimate();
+        }
+
+        function openClearDataModal() {
+            const modal = document.getElementById('clearDataModal');
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => modal.classList.add('is-open'));
+            initIcons(modal);
+        }
+
+        function closeClearDataModal() {
+            const modal = document.getElementById('clearDataModal');
+            modal.classList.remove('is-open');
+            setTimeout(() => {
+                if (!modal.classList.contains('is-open')) {
+                    modal.classList.add('hidden');
+                }
+            }, 250);
+        }
+
+        function confirmClearData() {
+            closeClearDataModal();
+            clearData();
+        }
+
+        function clearData() {
+            state.stats = getDefaultStats();
+            saveStats();
+            clearHistoryArchives().catch(console.error);
+            showToast('Datos borrados correctamente', 'success');
+        }
+
+        const MINUTES_SAVED_PER_FILE = 5;
+        const MAX_RECENT_DESIGNS = 5;
+        const HISTORY_DB_NAME = 'posterProHistory';
+        const HISTORY_STORE_NAME = 'archives';
+
+        const historyFilters = {
+            search: '',
+            ratio: 'all'
+        };
+
+        function openHistoryDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(HISTORY_DB_NAME, 1);
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains(HISTORY_STORE_NAME)) {
+                        db.createObjectStore(HISTORY_STORE_NAME);
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function saveHistoryArchive(id, zipBlob) {
+            const db = await openHistoryDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(HISTORY_STORE_NAME, 'readwrite');
+                tx.objectStore(HISTORY_STORE_NAME).put(zipBlob, id);
+                tx.oncomplete = () => {
+                    db.close();
+                    resolve();
+                };
+                tx.onerror = () => {
+                    db.close();
+                    reject(tx.error);
+                };
+            });
+        }
+
+        async function getHistoryArchive(id) {
+            const db = await openHistoryDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(HISTORY_STORE_NAME, 'readonly');
+                const request = tx.objectStore(HISTORY_STORE_NAME).get(id);
+                request.onsuccess = () => {
+                    db.close();
+                    resolve(request.result || null);
+                };
+                request.onerror = () => {
+                    db.close();
+                    reject(request.error);
+                };
+            });
+        }
+
+        async function clearHistoryArchives() {
+            const db = await openHistoryDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(HISTORY_STORE_NAME, 'readwrite');
+                tx.objectStore(HISTORY_STORE_NAME).clear();
+                tx.oncomplete = () => {
+                    db.close();
+                    resolve();
+                };
+                tx.onerror = () => {
+                    db.close();
+                    reject(tx.error);
+                };
+            });
+        }
+
+        function createSourceThumbnail(imgElement) {
+            const size = 96;
+            const canvas = document.createElement('canvas');
+            const ratio = imgElement.width / imgElement.height;
+            if (ratio >= 1) {
+                canvas.width = size;
+                canvas.height = Math.round(size / ratio);
+            } else {
+                canvas.height = size;
+                canvas.width = Math.round(size * ratio);
+            }
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+            canvas.width = 0;
+            canvas.height = 0;
+            return dataUrl;
+        }
+
+        async function buildZipFromGeneratedFiles() {
+            const zip = new JSZip();
+            state.generatedFiles.forEach(({ filename, blob }) => {
+                zip.file(filename, blob);
+            });
+            return zip.generateAsync({ type: 'blob' });
+        }
+
+        function getRatioBadgeLabel(ratioKey) {
+            if (ratioKey === 'A-Series') return 'ISO';
+            return ratioKey;
+        }
+
+        function normalizeHistoryEntry(entry) {
+            const ratios = Array.isArray(entry.ratios)
+                ? entry.ratios
+                : (typeof entry.formats === 'number' ? [] : []);
+            return {
+                id: entry.id || `legacy-${entry.date || Date.now()}`,
+                name: entry.name || 'Archivo sin nombre',
+                date: entry.date || formatDateTime(new Date()),
+                ratios,
+                thumbnail: entry.thumbnail || null,
+                filesGenerated: entry.filesGenerated ?? entry.formats ?? ratios.length,
+                hasArchive: entry.hasArchive === true
+            };
+        }
+
+        function getFilteredHistory() {
+            const { search, ratio } = historyFilters;
+            const query = search.trim().toLowerCase();
+
+            return state.stats.history
+                .map(normalizeHistoryEntry)
+                .filter((entry) => {
+                    const matchesSearch = !query || entry.name.toLowerCase().includes(query);
+                    const matchesRatio = ratio === 'all' || entry.ratios.includes(ratio);
+                    return matchesSearch && matchesRatio;
+                });
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        async function downloadHistoryItem(id, fileName) {
+            try {
+                const archive = await getHistoryArchive(id);
+                if (!archive) {
+                    showToast('El archivo ya no está disponible para descarga.', 'warning');
+                    return;
+                }
+
+                const baseName = fileName.replace(/\.[^/.]+$/, '');
+                const zipName = `${baseName}_Posters.zip`;
+                const url = URL.createObjectURL(archive);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = zipName;
+                link.click();
+                URL.revokeObjectURL(url);
+                showToast('Descarga iniciada', 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('No se pudo descargar el archivo.', 'error');
+            }
+        }
+
+        function clearHistory() {
+            if (state.stats.history.length === 0) {
+                showToast('El historial ya está vacío.', 'warning');
+                return;
+            }
+            if (!confirm('¿Vaciar todo el historial de producción? Esta acción no se puede deshacer.')) {
+                return;
+            }
+
+            state.stats.history = [];
+            state.stats.recentDesigns = [];
+            state.stats.designsProcessed = 0;
+            saveStats();
+            clearHistoryArchives().catch(console.error);
+            showToast('Historial vaciado', 'success');
+        }
+
+        function renderHistoryUI() {
+            const history = state.stats.history;
+            const emptyEl = document.getElementById('history-empty');
+            const panelEl = document.getElementById('history-panel');
+            const toolbarEl = document.getElementById('history-toolbar');
+            const historyList = document.getElementById('history-list');
+            const noResultsEl = document.getElementById('history-no-results');
+
+            if (history.length === 0) {
+                emptyEl.classList.remove('hidden');
+                panelEl.classList.add('hidden');
+                toolbarEl.classList.add('hidden');
+                historyList.innerHTML = '';
+                noResultsEl.classList.add('hidden');
+                initIcons();
+                return;
+            }
+
+            emptyEl.classList.add('hidden');
+            panelEl.classList.remove('hidden');
+            toolbarEl.classList.remove('hidden');
+
+            const filtered = getFilteredHistory();
+
+            if (filtered.length === 0) {
+                historyList.innerHTML = '';
+                noResultsEl.classList.remove('hidden');
+                initIcons();
+                return;
+            }
+
+            noResultsEl.classList.add('hidden');
+            historyList.innerHTML = filtered.map((entry, i) => {
+                const thumbHtml = entry.thumbnail
+                    ? `<img src="${entry.thumbnail}" alt="" class="w-12 h-12 rounded-lg object-cover border border-white/[0.08] bg-[#080808]">`
+                    : `<div class="w-12 h-12 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0">${icon('image', '', 'icon--sm text-zinc-600')}</div>`;
+
+                const ratioBadges = entry.ratios.length > 0
+                    ? entry.ratios.map((ratioKey) =>
+                        `<span class="history-ratio-badge">${escapeHtml(getRatioBadgeLabel(ratioKey))}</span>`
+                    ).join('')
+                    : `<span class="history-ratio-badge">${entry.filesGenerated} formato${entry.filesGenerated === 1 ? '' : 's'}</span>`;
+
+                const downloadDisabled = !entry.hasArchive;
+                const downloadTitle = downloadDisabled
+                    ? 'Archivo no disponible'
+                    : 'Descargar ZIP';
+
+                return `
+                    <div class="list-item-enter flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors group" style="animation-delay: ${i * 0.05}s">
+                        <div class="shrink-0">${thumbHtml}</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-zinc-200 font-medium truncate group-hover:text-white transition-colors">${escapeHtml(entry.name)}</p>
+                            <p class="text-[11px] text-zinc-600 mt-0.5 tabular-nums">${escapeHtml(entry.date)}</p>
+                            <div class="flex flex-wrap gap-1.5 mt-2">${ratioBadges}</div>
+                        </div>
+                        <button
+                            type="button"
+                            data-history-id="${escapeHtml(entry.id)}"
+                            data-history-name="${escapeHtml(entry.name)}"
+                            ${downloadDisabled ? 'disabled' : ''}
+                            title="${downloadTitle}"
+                            class="history-download-btn shrink-0 p-2.5 rounded-xl border border-white/[0.08] text-zinc-500 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            ${icon('download', '', 'icon--sm')}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            initIcons();
+        }
+
+        function getDefaultStats() {
+            return {
+                designsProcessed: 0,
+                totalFilesGenerated: 0,
+                bytesProcessed: 0,
+                formatUsage: {},
+                recentDesigns: [],
+                history: []
+            };
+        }
+
+        function normalizeStats(raw) {
+            if (!raw) return getDefaultStats();
+
+            if (raw.designsProcessed !== undefined) {
+                return {
+                    ...getDefaultStats(),
+                    ...raw,
+                    formatUsage: raw.formatUsage || {},
+                    recentDesigns: raw.recentDesigns || [],
+                    history: raw.history || []
+                };
+            }
+
+            // Migración desde esquema anterior
+            const history = raw.history || [];
+            return {
+                designsProcessed: history.length,
+                totalFilesGenerated: raw.filesProcessed || 0,
+                bytesProcessed: raw.bytesProcessed || 0,
+                formatUsage: {},
+                recentDesigns: history.slice(0, MAX_RECENT_DESIGNS),
+                history
+            };
+        }
+
+        function formatDateTime(date) {
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        }
+
+        function formatTimeSaved(totalFiles) {
+            const totalMinutes = totalFiles * MINUTES_SAVED_PER_FILE;
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            if (totalMinutes === 0) return '0m';
+            if (hours === 0) return `${minutes}m`;
+            if (minutes === 0) return `${hours}h`;
+            return `${hours}h ${minutes}m`;
+        }
+
+        function getTopFormat(formatUsage) {
+            const entries = Object.entries(formatUsage || {});
+            if (entries.length === 0) {
+                return { name: '—', pct: 0, hasData: false };
+            }
+            const total = entries.reduce((sum, [, count]) => sum + count, 0);
+            const [key, count] = entries.sort((a, b) => b[1] - a[1])[0];
+            const name = formatSpecs[key]?.label || key;
+            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+            return { name, pct, hasData: true };
+        }
 
         // Formatos y resoluciones base (DPI 300)
         const formatSpecs = {
@@ -537,8 +2543,40 @@
         function loadStats() {
             const saved = localStorage.getItem('posterProStats');
             if (saved) {
-                state.stats = JSON.parse(saved);
+                state.stats = normalizeStats(JSON.parse(saved));
             }
+            updateDashboardUI();
+        }
+
+        function updateStats({ fileName, formatsUsed, filesGenerated, bytesAdded = 0, historyId = null, thumbnail = null, hasArchive = false }) {
+            state.stats.designsProcessed += 1;
+            state.stats.totalFilesGenerated += filesGenerated;
+            state.stats.bytesProcessed += bytesAdded;
+
+            formatsUsed.forEach((formatKey) => {
+                state.stats.formatUsage[formatKey] = (state.stats.formatUsage[formatKey] || 0) + 1;
+            });
+
+            const entry = {
+                id: historyId || `hist-${Date.now()}`,
+                name: fileName,
+                date: formatDateTime(new Date()),
+                ratios: [...formatsUsed],
+                filesGenerated,
+                thumbnail,
+                hasArchive: hasArchive && !!historyId
+            };
+
+            state.stats.recentDesigns.unshift({
+                name: entry.name,
+                date: entry.date,
+                formats: filesGenerated
+            });
+            state.stats.recentDesigns = state.stats.recentDesigns.slice(0, MAX_RECENT_DESIGNS);
+
+            state.stats.history.unshift(entry);
+
+            localStorage.setItem('posterProStats', JSON.stringify(state.stats));
             updateDashboardUI();
         }
 
@@ -548,11 +2586,7 @@
         }
 
         function clearStats() {
-            if(confirm("¿Seguro que quieres borrar todas las estadísticas?")) {
-                state.stats = { filesProcessed: 0, bytesProcessed: 0, history: [] };
-                saveStats();
-                showToast("Estadísticas borradas", "success");
-            }
+            openClearDataModal();
         }
 
         function formatBytes(bytes, decimals = 2) {
@@ -568,11 +2602,38 @@
             return (px / 300) * 2.54;
         }
 
+        function pxToIn(px) {
+            return px / 300;
+        }
+
+        function formatPhysicalSize(px) {
+            if (state.settings.measureUnit === 'in') {
+                const inches = pxToIn(px);
+                return inches >= 10 ? inches.toFixed(1) : inches.toFixed(2);
+            }
+            return String(Math.round(pxToCm(px)));
+        }
+
+        function getMeasureUnitLabel() {
+            return state.settings.measureUnit === 'in' ? 'in' : 'cm';
+        }
+
         function buildFileName(originalName, formatKey, targetW, targetH) {
             const baseName = originalName.replace(/\.[^/.]+$/, '');
-            const ratioPart = 'Ratio' + formatKey.replace(':', 'x');
-            const dimPart = `${Math.round(targetW)}x${Math.round(targetH)}`;
-            return `${baseName}_${ratioPart}_${dimPart}.jpg`;
+            const ratioToken = formatKey.replace(':', 'x');
+            const dimensions = `${Math.round(targetW)}x${Math.round(targetH)}`;
+            const pattern = state.settings.fileNamePattern || DEFAULT_SETTINGS.fileNamePattern;
+
+            const fileStem = pattern
+                .replace(/\[NombreOriginal\]/g, baseName)
+                .replace(/\[Ratio\]/g, ratioToken)
+                .replace(/\[Ancho\]/g, String(Math.round(targetW)))
+                .replace(/\[Alto\]/g, String(Math.round(targetH)))
+                .replace(/\[Dimensiones\]/g, dimensions)
+                .replace(/[\\/:*?"<>|]/g, '-')
+                .trim();
+
+            return `${fileStem || baseName}.jpg`;
         }
 
         function calculateCropRect(img, targetW, targetH, alignment) {
@@ -608,6 +2669,13 @@
             state.generatedFiles = [];
         }
 
+        function revokePreviewObjectUrl() {
+            if (state.previewObjectUrl) {
+                URL.revokeObjectURL(state.previewObjectUrl);
+                state.previewObjectUrl = null;
+            }
+        }
+
         async function downloadAllZip() {
             if (state.generatedFiles.length === 0) {
                 showToast('No hay archivos para descargar.', 'error');
@@ -621,8 +2689,8 @@
             const downloadAllBtn = document.getElementById('downloadAllBtn');
             const originalBtnText = downloadAllBtn.innerHTML;
             downloadAllBtn.disabled = true;
-            downloadAllBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Empaquetando...</span>`;
-            lucide.createIcons();
+            downloadAllBtn.innerHTML = `${icon('loader-2', '', 'icon--inline icon--spin')}<span>Empaquetando...</span>`;
+            initIcons();
 
             try {
                 const zip = new JSZip();
@@ -647,7 +2715,7 @@
             } finally {
                 downloadAllBtn.disabled = false;
                 downloadAllBtn.innerHTML = originalBtnText;
-                lucide.createIcons();
+                initIcons();
             }
         }
 
@@ -658,83 +2726,810 @@
                 return;
             }
 
+            const unit = getMeasureUnitLabel();
             const lines = [];
             for (const formatKey of state.selectedFormats) {
                 const spec = formatSpecs[formatKey];
-                const wCm = Math.round(pxToCm(spec.w * state.scaleFactor));
-                const hCm = Math.round(pxToCm(spec.h * state.scaleFactor));
+                const w = formatPhysicalSize(spec.w * state.scaleFactor);
+                const h = formatPhysicalSize(spec.h * state.scaleFactor);
                 if (state.selectedFormats.size === 1) {
-                    el.textContent = `Resolución estimada: ~${wCm} × ${hCm} cm a 300 DPI`;
+                    el.textContent = `Resolución estimada: ~${w} × ${h} ${unit} a 300 DPI`;
                     return;
                 }
-                lines.push(`${spec.label}: ~${wCm} × ${hCm} cm`);
+                lines.push(`${spec.label}: ~${w} × ${h} ${unit}`);
             }
             el.textContent = `Resolución estimada a 300 DPI — ${lines.join(' · ')}`;
         }
 
         // --- SISTEMA DE NAVEGACIÓN (SPA) ---
-        function switchView(viewName) {
-            // Actualizar botones del menú
-            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`nav-${viewName}`).classList.add('active');
+        const SIDEBAR_STORAGE_KEY = 'posterProSidebarCollapsed';
+        const VIEW_LEAVE_MS = 320;
+        const VIEW_ENTER_MS = 420;
+        let viewTransitionLock = false;
 
-            // Actualizar vistas
-            document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active'));
-            document.getElementById(`view-${viewName}`).classList.add('active');
+        function setSidebarCollapsed(collapsed, persist = true) {
+            const sidebar = document.getElementById('appSidebar');
+            const toggleBtn = document.getElementById('sidebarToggle');
 
-            // Actualizar título
-            const titles = {
-                'dashboard': 'Dashboard de Producción',
-                'processor': 'Procesador de Pósteres',
-                'history': 'Historial',
-                'settings': 'Ajustes del Sistema'
-            };
-            document.getElementById('header-title').textContent = titles[viewName];
+            if (sidebar.classList.contains('is-collapsed') === collapsed) return;
+            if (sidebar.classList.contains('is-transitioning')) return;
 
+            sidebar.classList.add('is-transitioning');
+            sidebar.classList.toggle('is-collapsed', collapsed);
+
+            const label = collapsed ? 'Expandir menú' : 'Plegar menú';
+
+            toggleBtn.setAttribute('aria-expanded', String(!collapsed));
+            toggleBtn.setAttribute('aria-label', label);
+            toggleBtn.title = label;
+            toggleBtn.classList.toggle('is-collapsed', collapsed);
+
+            if (persist) {
+                localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? 'true' : 'false');
+            }
+
+            window.setTimeout(() => {
+                sidebar.classList.remove('is-transitioning');
+            }, 540);
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('appSidebar');
+            setSidebarCollapsed(!sidebar.classList.contains('is-collapsed'));
+        }
+
+        function loadSidebarState() {
+            const sidebar = document.getElementById('appSidebar');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            const collapsed = localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true';
+
+            sidebar.classList.add('sidebar-no-animate');
+            sidebar.classList.toggle('is-collapsed', collapsed);
+            toggleBtn.classList.toggle('is-collapsed', collapsed);
+
+            const label = collapsed ? 'Expandir menú' : 'Plegar menú';
+            toggleBtn.setAttribute('aria-expanded', String(!collapsed));
+            toggleBtn.setAttribute('aria-label', label);
+            toggleBtn.title = label;
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    sidebar.classList.remove('sidebar-no-animate');
+                });
+            });
+        }
+
+        function navigate(viewName) {
+            switchView(viewName);
+        }
+
+        function pulseStatElements() {
+            document.querySelectorAll('.stat-value').forEach((el) => {
+                el.classList.remove('stat-pulse');
+                void el.offsetWidth;
+                el.classList.add('stat-pulse');
+            });
+        }
+
+        function animatePanelEnter(element) {
+            element.classList.remove('panel-fade-in');
+            void element.offsetWidth;
+            element.classList.add('panel-fade-in');
+        }
+
+        function runAfterViewEnter(viewName) {
             if (viewName === 'dashboard' || viewName === 'history') {
                 updateDashboardUI();
             }
+            if (viewName === 'mockups') {
+                updateMockupUI();
+            }
+        }
+
+        function switchView(viewName) {
+            const nextView = document.getElementById(`view-${viewName}`);
+            const viewsStage = document.getElementById('viewsStage');
+            const scrollEl = document.querySelector('.app-main-scroll');
+
+            if (!nextView || !viewsStage) return;
+
+            const currentView = document.querySelector('.view-section.active');
+
+            if (currentView === nextView && !viewTransitionLock) return;
+            if (viewTransitionLock) return;
+
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            const navBtn = document.getElementById(`nav-${viewName}`);
+            if (navBtn) navBtn.classList.add('active');
+
+            const completeEnter = () => {
+                nextView.classList.remove('is-entering');
+                viewsStage.classList.remove('is-transitioning');
+                viewTransitionLock = false;
+                runAfterViewEnter(viewName);
+            };
+
+            viewTransitionLock = true;
+            viewsStage.classList.add('is-transitioning');
+
+            if (scrollEl) {
+                scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            if (!currentView || currentView === nextView) {
+                document.querySelectorAll('.view-section').forEach((view) => {
+                    view.classList.remove('active', 'is-leaving', 'is-entering');
+                });
+                nextView.classList.add('active', 'is-entering');
+                window.setTimeout(completeEnter, VIEW_ENTER_MS);
+                return;
+            }
+
+            currentView.classList.remove('active');
+            currentView.classList.add('is-leaving');
+
+            nextView.classList.add('active', 'is-entering');
+
+            window.setTimeout(() => {
+                currentView.classList.remove('is-leaving');
+            }, VIEW_LEAVE_MS);
+
+            window.setTimeout(completeEnter, VIEW_ENTER_MS);
+        }
+
+        // --- MOCKUPS 3D + PHOTOPEA API ---
+        const SMART_OBJECT_KEYWORDS = [
+            'design', 'diseño', 'poster', 'mockup', 'artwork', 'replace', 'insert', 'place', 'here'
+        ];
+        const MOCKUP_TEMPLATE_LABELS = {
+            'wood-frame': 'Marco Madera',
+            'black-frame': 'Marco Negro',
+            'white-wall': 'Pared Blanca',
+            custom: 'Personalizado'
+        };
+
+        function initPhotopeaBridge() {
+            bootstrapPhotopeaEngine();
+        }
+
+        function waitForPhotopeaReady(timeoutMs = 20000) {
+            bootstrapPhotopeaEngine();
+            if (photopeaBridge.ready) {
+                console.log('[Photopea] Motor ya estaba listo');
+                return Promise.resolve();
+            }
+            if (!photopeaBridge.readyPromise) {
+                console.log('[Photopea] Esperando primer "done" del motor…');
+                photopeaBridge.readyPromise = new Promise((resolve, reject) => {
+                    photopeaBridge.readyResolve = resolve;
+                    photopeaBridge.readyReject = reject;
+                    photopeaBridge.readyTimeoutId = setTimeout(() => {
+                        photopeaBridge.readyPromise = null;
+                        photopeaBridge.readyResolve = null;
+                        photopeaBridge.readyReject = null;
+                        reject(new Error('Photopea no respondió en 20 segundos. Comprueba tu conexión o desactiva el bloqueador de anuncios.'));
+                    }, timeoutMs);
+                });
+            }
+            return photopeaBridge.readyPromise;
+        }
+
+        function postToPhotopea(payload) {
+            if (!photopeaBridge.frame?.contentWindow) {
+                throw new Error('El motor Photopea no está disponible. Recarga la página e inténtalo de nuevo.');
+            }
+            photopeaBridge.frame.contentWindow.postMessage(payload, '*');
+        }
+
+        function waitForPhotopeaDone(timeoutMs = 90000, stepLabel = 'operación') {
+            return new Promise((resolve, reject) => {
+                photopeaBridge.pendingDone = resolve;
+                photopeaBridge.timeoutId = setTimeout(() => {
+                    photopeaBridge.pendingDone = null;
+                    photopeaBridge.timeoutId = null;
+                    photopeaBridge.busy = false;
+                    reject(new Error(`Tiempo de espera agotado en Photopea (${stepLabel}). Prueba con un póster más pequeño o recarga la página.`));
+                }, timeoutMs);
+            });
+        }
+
+        function clearPhotopeaWaiters() {
+            if (photopeaBridge.timeoutId) {
+                clearTimeout(photopeaBridge.timeoutId);
+                photopeaBridge.timeoutId = null;
+            }
+            photopeaBridge.pendingDone = null;
+            photopeaBridge.pendingBuffer = null;
+            photopeaBridge.lastEcho = null;
+            photopeaBridge.busy = false;
+        }
+
+        async function sendToPhotopea(payload, { timeoutMs = 90000, stepLabel = 'operación' } = {}) {
+            if (photopeaBridge.busy) {
+                throw new Error('Photopea está ocupado procesando otra tarea.');
+            }
+            await waitForPhotopeaReady();
+            photopeaBridge.busy = true;
+            photopeaBridge.pendingBuffer = null;
+            photopeaBridge.lastEcho = null;
+
+            const payloadLabel = payload instanceof ArrayBuffer
+                ? `ArrayBuffer (${payload.byteLength} bytes)`
+                : typeof payload === 'string'
+                    ? `script (${stepLabel})`
+                    : String(typeof payload);
+            console.log('[Photopea] Enviando:', payloadLabel, '—', stepLabel);
+
+            const donePromise = waitForPhotopeaDone(timeoutMs, stepLabel);
+            try {
+                postToPhotopea(payload);
+                const result = await donePromise;
+                console.log('[Photopea] Paso completado:', stepLabel, result.echo ? `(echo: ${result.echo})` : '', result.buffer ? `(export: ${result.buffer.byteLength} bytes)` : '');
+                return result;
+            } catch (error) {
+                clearPhotopeaWaiters();
+                throw error;
+            }
+        }
+
+        const MOCKUP_POSTER_MAX_PX = 4000;
+
+        async function resizePosterForPhotopea(dataUrl, maxPx = MOCKUP_POSTER_MAX_PX) {
+            const img = await new Promise((resolve, reject) => {
+                const el = new Image();
+                el.onload = () => resolve(el);
+                el.onerror = () => reject(new Error('No se pudo decodificar la imagen del póster.'));
+                el.src = dataUrl;
+            });
+
+            const w = img.naturalWidth;
+            const h = img.naturalHeight;
+            const longest = Math.max(w, h);
+
+            if (longest <= maxPx) {
+                return dataUrl;
+            }
+
+            const scale = maxPx / longest;
+            const tw = Math.round(w * scale);
+            const th = Math.round(h * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = tw;
+            canvas.height = th;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, tw, th);
+            return canvas.toDataURL('image/jpeg', 0.92);
+        }
+
+        function dataUrlToArrayBuffer(dataUrl) {
+            const base64 = dataUrl.split(',')[1];
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i += 1) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function setMockupProgress(stepText) {
+            state.mockup.progressText = stepText;
+            const generateBtn = document.getElementById('mockupGenerateBtn');
+            const statusText = document.getElementById('mockupStatusText');
+            if (generateBtn) {
+                generateBtn.innerHTML = `${icon('loader-2', '', 'icon--inline icon--spin')}<span>${stepText}</span>`;
+                initIcons(generateBtn);
+            }
+            if (statusText) statusText.textContent = stepText;
+        }
+
+        function getCloseAllDocumentsScript() {
+            return `
+                try {
+                    while (app.documents.length > 0) {
+                        app.activeDocument.close(SaveOptions.DONOTSAVECHANGES);
+                    }
+                } catch (e) {
+                    app.echoToOE("ERROR: " + e.message);
+                }
+            `;
+        }
+
+        function getPhotopeaLayerHelpersScript() {
+            const keywordsJson = JSON.stringify(SMART_OBJECT_KEYWORDS);
+            return `
+                var __keywords = ${keywordsJson};
+                function __normalizeName(name) {
+                    return String(name).toLowerCase().replace(/[-_/\\.]/g, " ");
+                }
+                function __matchesKeywords(layerName) {
+                    var n = __normalizeName(layerName);
+                    for (var ki = 0; ki < __keywords.length; ki++) {
+                        if (n.indexOf(String(__keywords[ki]).toLowerCase()) > -1) return true;
+                    }
+                    return false;
+                }
+                function __findSmartObject(parent, requireKeyword) {
+                    var fallback = null;
+                    for (var i = 0; i < parent.layers.length; i++) {
+                        var layer = parent.layers[i];
+                        if (layer.typename === "ArtLayer" && layer.kind === LayerKind.SMARTOBJECT) {
+                            if (!requireKeyword || __matchesKeywords(layer.name)) return layer;
+                            if (!fallback) fallback = layer;
+                        } else if (layer.typename === "LayerSet") {
+                            var found = __findSmartObject(layer, requireKeyword);
+                            if (found) return found;
+                        }
+                    }
+                    return requireKeyword ? null : fallback;
+                }
+                function __findMockupDoc() {
+                    for (var d = 0; d < app.documents.length; d++) {
+                        if (__findSmartObject(app.documents[d], true)) return app.documents[d];
+                    }
+                    for (var d2 = 0; d2 < app.documents.length; d2++) {
+                        if (__findSmartObject(app.documents[d2], false)) return app.documents[d2];
+                    }
+                    return null;
+                }
+                function __findPosterDocExcluding(excludeA, excludeB) {
+                    for (var d = app.documents.length - 1; d >= 0; d--) {
+                        var doc = app.documents[d];
+                        if (doc !== excludeA && doc !== excludeB) return doc;
+                    }
+                    return null;
+                }
+                function __clearDocLayers(doc) {
+                    try {
+                        if (doc.layers.length > 0) {
+                            doc.selection.selectAll();
+                            doc.selection.clear();
+                        }
+                    } catch (e1) {
+                        for (var i = doc.layers.length - 1; i >= 0; i--) {
+                            try { doc.layers[i].remove(); } catch (e2) {}
+                        }
+                    }
+                }
+            `;
+        }
+
+        function wrapPhotopeaScript(body) {
+            return getPhotopeaLayerHelpersScript() + '\ntry {\n' + body + '\n} catch (e) {\napp.echoToOE("ERROR: " + e.message);\n}';
+        }
+
+        function getCopyPosterScript() {
+            return wrapPhotopeaScript(`
+                var mockupDoc = __findMockupDoc();
+                var posterDoc = __findPosterDocExcluding(mockupDoc, null);
+                if (!mockupDoc || !posterDoc) {
+                    app.echoToOE("ERROR: no se encontraron el PSD y el póster abiertos (docs=" + app.documents.length + ")");
+                } else {
+                    app.echoToOE("OK:DOCS_READY:" + mockupDoc.name + "|" + posterDoc.name);
+                }
+            `);
+        }
+
+        function getOpenSmartObjectScript() {
+            return wrapPhotopeaScript(`
+                var mockupDoc = __findMockupDoc();
+                if (!mockupDoc) {
+                    app.echoToOE("ERROR: no se encontró capa de objeto inteligente");
+                } else {
+                    var smartLayer = __findSmartObject(mockupDoc, true) || __findSmartObject(mockupDoc, false);
+                    if (!smartLayer) {
+                        app.echoToOE("ERROR: no se encontró capa de objeto inteligente");
+                    } else {
+                        mockupDoc.activeLayer = smartLayer;
+                        var desc = new ActionDescriptor();
+                        executeAction(stringIDToTypeID("placedLayerEditContents"), desc, DialogModes.NO);
+                        app.echoToOE("OK:SO_OPENED:" + smartLayer.name);
+                    }
+                }
+            `);
+        }
+
+        function getInsertPosterIntoSmartObjectScript() {
+            return wrapPhotopeaScript(`
+                var soDoc = app.activeDocument;
+                var mockupDoc = __findMockupDoc();
+                var posterDoc = __findPosterDocExcluding(mockupDoc, soDoc);
+                if (!posterDoc) {
+                    app.echoToOE("ERROR: no se encontró el documento del póster");
+                } else {
+                    __clearDocLayers(soDoc);
+                    app.activeDocument = posterDoc;
+                    if (posterDoc.layers.length > 1) {
+                        try { posterDoc.flatten(); } catch (flatErr) {}
+                    }
+                    posterDoc.activeLayer = posterDoc.layers[0];
+                    posterDoc.activeLayer.duplicate(soDoc, ElementPlacement.PLACEATBEGINNING);
+                    posterDoc.close(SaveOptions.DONOTSAVECHANGES);
+                    app.activeDocument = soDoc;
+                    if (!soDoc.activeLayer) {
+                        app.echoToOE("ERROR: no se pudo insertar el póster en el objeto inteligente");
+                    } else {
+                        app.echoToOE("OK:POSTER_INSERTED");
+                    }
+                }
+            `);
+        }
+
+        function getFitPosterInSmartObjectScript() {
+            return wrapPhotopeaScript(`
+                var soDoc = app.activeDocument;
+                var layer = soDoc.activeLayer;
+                if (!layer) {
+                    app.echoToOE("ERROR: no hay capa activa para ajustar");
+                } else {
+                    var docW = soDoc.width.as("px");
+                    var docH = soDoc.height.as("px");
+                    var bounds = layer.bounds;
+                    var layW = bounds[2].as("px") - bounds[0].as("px");
+                    var layH = bounds[3].as("px") - bounds[1].as("px");
+                    if (layW > 0 && layH > 0) {
+                        var scalePct = Math.min(docW / layW, docH / layH) * 100;
+                        layer.resize(scalePct, scalePct, AnchorPosition.MIDDLECENTER);
+                        bounds = layer.bounds;
+                        var newW = bounds[2].as("px") - bounds[0].as("px");
+                        var newH = bounds[3].as("px") - bounds[1].as("px");
+                        layer.translate((docW - newW) / 2 - bounds[0].as("px"), (docH - newH) / 2 - bounds[1].as("px"));
+                    }
+                    app.echoToOE("OK:POSTER_FITTED");
+                }
+            `);
+        }
+
+        function getCloseSmartObjectScript() {
+            return wrapPhotopeaScript(`
+                var soDoc = app.activeDocument;
+                soDoc.close(SaveOptions.SAVECHANGES);
+                var mockupDoc = __findMockupDoc();
+                if (mockupDoc) app.activeDocument = mockupDoc;
+                app.echoToOE("OK:SO_SAVED");
+            `);
+        }
+
+        function assertPhotopeaEcho(result, expectedPrefix, stepLabel) {
+            if (!result.echo || result.echo.indexOf(expectedPrefix) !== 0) {
+                if (result.echo && result.echo.indexOf('ERROR:') === 0) {
+                    throw new Error(parsePhotopeaEchoError(result.echo, `Error en ${stepLabel}.`));
+                }
+                throw new Error(parsePhotopeaEchoError(result.echo, `Photopea no completó: ${stepLabel}.`));
+            }
+        }
+
+        async function runPhotopeaScriptStep(script, stepLabel, expectedPrefix, timeoutMs = 60000) {
+            const result = await sendToPhotopea(script, { timeoutMs, stepLabel });
+            assertPhotopeaEcho(result, expectedPrefix, stepLabel);
+            return result;
+        }
+
+        function getExportJpgScript() {
+            return wrapPhotopeaScript(`
+                var mockupDoc = __findMockupDoc();
+                if (!mockupDoc) {
+                    app.echoToOE("ERROR: no hay documento activo para exportar");
+                } else {
+                    app.activeDocument = mockupDoc;
+                    app.activeDocument.saveToOE("jpg:0.95");
+                }
+            `);
+        }
+
+        function parsePhotopeaEchoError(echo, fallbackMessage) {
+            if (!echo) return fallbackMessage;
+            if (echo.indexOf('ERROR:') === 0) {
+                return echo.replace(/^ERROR:\s*/, '').trim() || fallbackMessage;
+            }
+            return fallbackMessage + (echo ? ` Detalle: ${echo}` : '');
+        }
+
+        async function generateMockup(posterDataUrl, psdFile) {
+            setMockupProgress('Inicializando motor…');
+            console.log('[Mockup] Iniciando pipeline');
+            await waitForPhotopeaReady();
+
+            setMockupProgress('Preparando archivos…');
+            const optimizedPosterUrl = await resizePosterForPhotopea(posterDataUrl);
+
+            let psdBuffer;
+            let posterBuffer;
+            try {
+                psdBuffer = psdFile instanceof ArrayBuffer
+                    ? psdFile
+                    : await psdFile.arrayBuffer();
+                posterBuffer = dataUrlToArrayBuffer(optimizedPosterUrl);
+                console.log('[Mockup] Buffers listos — PSD:', psdBuffer.byteLength, 'bytes, póster:', posterBuffer.byteLength, 'bytes');
+            } catch (error) {
+                throw new Error('No se pudieron leer los archivos del mockup. ' + (error.message || ''));
+            }
+
+            setMockupProgress('Limpiando sesión anterior…');
+            const cleanupResult = await sendToPhotopea(getCloseAllDocumentsScript(), { timeoutMs: 15000, stepLabel: 'limpieza de documentos' });
+            if (cleanupResult.echo && cleanupResult.echo.indexOf('ERROR:') === 0) {
+                console.warn('[Mockup] Limpieza con aviso:', cleanupResult.echo);
+            }
+
+            setMockupProgress('Cargando maqueta…');
+            await sendToPhotopea(psdBuffer, { timeoutMs: 90000, stepLabel: 'carga del PSD' });
+            console.log('[Mockup] PSD cargado');
+
+            setMockupProgress('Cargando póster…');
+            await sendToPhotopea(posterBuffer, { timeoutMs: 90000, stepLabel: 'carga del póster' });
+            console.log('[Mockup] Póster cargado');
+
+            setMockupProgress('Verificando documentos…');
+            await runPhotopeaScriptStep(getCopyPosterScript(), 'verificación de documentos', 'OK:DOCS_READY', 30000);
+            console.log('[Mockup] PSD y póster detectados');
+
+            setMockupProgress('Abriendo objeto inteligente…');
+            await runPhotopeaScriptStep(getOpenSmartObjectScript(), 'apertura del objeto inteligente', 'OK:SO_OPENED', 60000);
+            console.log('[Mockup] Objeto inteligente abierto');
+
+            setMockupProgress('Insertando diseño…');
+            await runPhotopeaScriptStep(getInsertPosterIntoSmartObjectScript(), 'inserción del diseño', 'OK:POSTER_INSERTED', 45000);
+            console.log('[Mockup] Diseño insertado');
+
+            setMockupProgress('Ajustando diseño…');
+            await runPhotopeaScriptStep(getFitPosterInSmartObjectScript(), 'ajuste del diseño', 'OK:POSTER_FITTED', 30000);
+            console.log('[Mockup] Diseño ajustado');
+
+            setMockupProgress('Guardando objeto inteligente…');
+            await runPhotopeaScriptStep(getCloseSmartObjectScript(), 'guardado del objeto inteligente', 'OK:SO_SAVED', 60000);
+            console.log('[Mockup] Objeto inteligente guardado');
+
+            setMockupProgress('Exportando JPG…');
+            const exportResult = await sendToPhotopea(
+                getExportJpgScript(),
+                { timeoutMs: 60000, stepLabel: 'exportación JPG' }
+            );
+            if (exportResult.echo && exportResult.echo.indexOf('ERROR:') === 0) {
+                throw new Error(parsePhotopeaEchoError(exportResult.echo, 'Error al exportar el mockup.'));
+            }
+            if (!exportResult.buffer || exportResult.buffer.byteLength === 0) {
+                throw new Error('Photopea no devolvió la imagen exportada.');
+            }
+            console.log('[Mockup] Export JPG recibido:', exportResult.buffer.byteLength, 'bytes');
+
+            return exportResult.buffer;
+        }
+
+        function updateMockupUI() {
+            const hasPoster = Boolean(state.mockup.posterDataUrl);
+            const hasPsd = Boolean(state.mockup.psdFile);
+            const generateBtn = document.getElementById('mockupGenerateBtn');
+            const statusText = document.getElementById('mockupStatusText');
+
+            generateBtn.disabled = !hasPoster || !hasPsd || state.mockup.generating;
+
+            if (state.mockup.generating) {
+                statusText.textContent = state.mockup.progressText || 'Procesando mockup en Photopea…';
+            } else if (!hasPoster && !hasPsd) {
+                statusText.textContent = 'Sube un póster y un archivo .psd para comenzar.';
+            } else if (!hasPoster) {
+                statusText.textContent = 'Falta el póster procesado.';
+            } else if (!hasPsd) {
+                statusText.textContent = 'Falta la plantilla .psd de la maqueta.';
+            } else {
+                statusText.textContent = 'Todo listo. Pulsa generar para crear tu mockup.';
+            }
+
+            renderMockupGallery();
+            initIcons();
+        }
+
+        function renderMockupGallery() {
+            const gallery = document.getElementById('mockupGallery');
+            const empty = document.getElementById('mockupGalleryEmpty');
+            const countEl = document.getElementById('mockupResultsCount');
+            const results = state.mockup.results;
+
+            countEl.textContent = String(results.length);
+
+            if (results.length === 0) {
+                gallery.classList.add('hidden');
+                gallery.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            gallery.classList.remove('hidden');
+            gallery.innerHTML = results.map((item, index) => `
+                <div class="mockup-gallery-item list-item-enter" style="animation-delay: ${index * 0.05}s">
+                    <img src="${item.url}" alt="${item.name}">
+                    <div class="p-2.5 flex items-center justify-between gap-2 border-t border-white/[0.06]">
+                        <div class="min-w-0">
+                            <p class="text-[11px] text-zinc-300 font-medium truncate">${item.name}</p>
+                            <p class="text-[10px] text-zinc-600 tabular-nums">${formatBytes(item.blob.size)}</p>
+                        </div>
+                        <a href="${item.url}" download="${item.filename}" class="shrink-0" title="Descargar">
+                            ${icon('download', 'icon-box icon-box--download', '')}
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+            initIcons(gallery);
+        }
+
+        function setMockupPoster(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                showToast('Selecciona una imagen válida para el póster.', 'error');
+                return;
+            }
+
+            if (state.mockup.posterDataUrl && state.mockup.posterDataUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(state.mockup.posterDataUrl);
+            }
+
+            state.mockup.posterFile = file;
+            state.mockup.posterDataUrl = URL.createObjectURL(file);
+
+            document.getElementById('mockupPosterPlaceholder').classList.add('hidden');
+            document.getElementById('mockupPosterPreview').classList.remove('hidden');
+            document.getElementById('mockupPosterImage').src = state.mockup.posterDataUrl;
+            document.getElementById('mockupPosterName').textContent = file.name;
+            updateMockupUI();
+        }
+
+        function setMockupPsd(file) {
+            if (!file) return;
+            const isPsd = file.name.toLowerCase().endsWith('.psd') || file.type.includes('photoshop');
+            if (!isPsd) {
+                showToast('La plantilla debe ser un archivo .psd', 'error');
+                return;
+            }
+
+            state.mockup.psdFile = file;
+            document.getElementById('mockupPsdLabel').textContent = file.name;
+            updateMockupUI();
+        }
+
+        function selectMockupTemplate(templateId) {
+            state.mockup.selectedTemplateId = templateId;
+            document.querySelectorAll('.mockup-template-card').forEach((card) => {
+                card.classList.toggle('active-card', card.dataset.template === templateId);
+            });
+            updateMockupUI();
+        }
+
+        async function handleGenerateMockup() {
+            if (!state.mockup.posterDataUrl || !state.mockup.psdFile || state.mockup.generating) return;
+
+            const generateBtn = document.getElementById('mockupGenerateBtn');
+            const originalHtml = generateBtn.innerHTML;
+            state.mockup.generating = true;
+            updateMockupUI();
+
+            generateBtn.innerHTML = `${icon('loader-2', '', 'icon--inline icon--spin')}<span>Generando mockup…</span>`;
+            initIcons(generateBtn);
+
+            try {
+                console.log('[Mockup] Generar mockup — inicio');
+                const posterDataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(new Error('No se pudo leer el póster.'));
+                    reader.readAsDataURL(state.mockup.posterFile);
+                });
+
+                const jpgBuffer = await generateMockup(posterDataUrl, state.mockup.psdFile);
+                const blob = new Blob([jpgBuffer], { type: 'image/jpeg' });
+                const url = URL.createObjectURL(blob);
+                const templateLabel = MOCKUP_TEMPLATE_LABELS[state.mockup.selectedTemplateId] || 'Mockup';
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+                const filename = `Mockup_${templateLabel.replace(/\s+/g, '-')}_${timestamp}.jpg`;
+
+                state.mockup.results.unshift({
+                    id: `mockup-${Date.now()}`,
+                    name: templateLabel,
+                    filename,
+                    blob,
+                    url,
+                    createdAt: new Date().toLocaleString('es-ES')
+                });
+
+                renderMockupGallery();
+                showToast('Mockup generado con éxito', 'success');
+                console.log('[Mockup] Generar mockup — éxito');
+            } catch (error) {
+                console.error('[Mockup] Error en pipeline:', error);
+                showToast(error.message || 'Error al generar el mockup.', 'error');
+            } finally {
+                state.mockup.generating = false;
+                state.mockup.progressText = null;
+                clearPhotopeaWaiters();
+                generateBtn.innerHTML = originalHtml;
+                updateMockupUI();
+                initIcons(generateBtn);
+            }
+        }
+
+        function initMockupsModule() {
+            initPhotopeaBridge();
+
+            const posterInput = document.getElementById('mockupPosterInput');
+            const psdInput = document.getElementById('mockupPsdInput');
+            const posterZone = document.getElementById('mockupPosterZone');
+            const generateBtn = document.getElementById('mockupGenerateBtn');
+
+            posterInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) setMockupPoster(file);
+            });
+
+            psdInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) setMockupPsd(file);
+            });
+
+            posterZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                posterZone.classList.add('border-white/25', 'bg-white/[0.04]');
+            });
+
+            posterZone.addEventListener('dragleave', () => {
+                posterZone.classList.remove('border-white/25', 'bg-white/[0.04]');
+            });
+
+            posterZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                posterZone.classList.remove('border-white/25', 'bg-white/[0.04]');
+                const file = e.dataTransfer.files[0];
+                if (file) setMockupPoster(file);
+            });
+
+            document.querySelectorAll('.mockup-template-card').forEach((card) => {
+                card.addEventListener('click', () => selectMockupTemplate(card.dataset.template));
+            });
+
+            generateBtn.addEventListener('click', handleGenerateMockup);
+            updateMockupUI();
         }
 
         function updateDashboardUI() {
-            // Stats
-            document.getElementById('stat-files').textContent = state.stats.filesProcessed;
-            document.getElementById('stat-volume').textContent = formatBytes(state.stats.bytesProcessed, 1);
-            // Tiempo inventado basado en uso (2 mins de ahorro por archivo)
-            document.getElementById('stat-time').textContent = (state.stats.filesProcessed * 2) + ' min';
+            const { designsProcessed, totalFilesGenerated, formatUsage, recentDesigns } = state.stats;
 
-            // Historial reciente para Dashboard (Top 3)
+            document.getElementById('stat-designs').textContent = designsProcessed;
+            document.getElementById('stat-total-files').textContent =
+                `Generando un total de ${totalFilesGenerated} archivo${totalFilesGenerated === 1 ? '' : 's'}`;
+
+            document.getElementById('stat-time-saved').textContent = formatTimeSaved(totalFilesGenerated);
+
+            const topFormat = getTopFormat(formatUsage);
+            document.getElementById('stat-top-format').textContent = topFormat.name;
+            document.getElementById('stat-top-format-pct').textContent = topFormat.hasData
+                ? `${topFormat.pct}% de uso sobre el total`
+                : 'Sin datos de uso aún';
+
+            pulseStatElements();
+
             const dashRecent = document.getElementById('dashboard-recent');
-            if (state.stats.history.length === 0) {
-                dashRecent.innerHTML = '<p class="italic text-zinc-500">No hay actividad reciente.</p>';
-            } else {
-                dashRecent.innerHTML = state.stats.history.slice(0, 3).map(h => `
-                    <div class="flex items-center justify-between border-b border-white/5 pb-2 last:border-0 last:pb-0">
-                        <span class="text-white">${h.name}</span>
-                        <span class="text-xs text-zinc-500">${h.date}</span>
+            if (recentDesigns.length === 0) {
+                dashRecent.innerHTML = `
+                    <div class="px-6 py-12 flex flex-col items-center justify-center text-center panel-fade-in">
+                        ${icon('image-off', 'icon-box icon-box--lg icon-box--muted', '')}
+                        <p class="text-sm text-zinc-500 font-medium mt-4">No hay actividad reciente</p>
+                        <p class="text-xs text-zinc-600 mt-1 max-w-[240px]">Procesa tu primer diseño para ver el historial aquí.</p>
                     </div>
-                `).join('');
-            }
-
-            // Vista de Historial Completa
-            const historyList = document.getElementById('history-list');
-            if (state.stats.history.length === 0) {
-                historyList.innerHTML = '<div class="p-8 text-center text-zinc-500">Aún no has procesado ninguna imagen.</div>';
+                `;
             } else {
-                historyList.innerHTML = state.stats.history.map(h => `
-                    <div class="flex items-center justify-between p-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                        <div class="flex items-center gap-3">
-                            <i data-lucide="image" class="w-4 h-4 text-zinc-500"></i>
-                            <div>
-                                <p class="text-white text-sm">${h.name}</p>
-                                <p class="text-xs text-zinc-500">${h.formats} formatos generados</p>
+                dashRecent.innerHTML = recentDesigns.map((item, i) => `
+                    <div class="list-item-enter flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors group" style="animation-delay: ${i * 0.06}s">
+                        <div class="flex items-center gap-3 min-w-0">
+                            ${icon('image', 'icon-box icon-box--file', '')}
+                            <div class="min-w-0">
+                                <p class="text-sm text-zinc-200 font-medium truncate group-hover:text-white transition-colors">${item.name}</p>
+                                <p class="text-[11px] text-zinc-600">${item.formats} formato${item.formats === 1 ? '' : 's'} generado${item.formats === 1 ? '' : 's'}</p>
                             </div>
                         </div>
-                        <span class="text-xs text-zinc-400">${h.date}</span>
+                        <span class="text-[11px] text-zinc-600 font-medium tabular-nums shrink-0 ml-4">${item.date}</span>
                     </div>
                 `).join('');
-                lucide.createIcons();
             }
+            initIcons();
+
+            renderHistoryUI();
         }
 
         // --- SISTEMA DE TOASTS ---
@@ -743,14 +3538,14 @@
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
             
-            let icon = '';
-            if (type === 'error') icon = `<i data-lucide="alert-circle" class="w-5 h-5 text-red-400"></i>`;
-            else if (type === 'success') icon = `<i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>`;
-            else if (type === 'warning') icon = `<i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i>`;
+            let iconHtml = '';
+            if (type === 'error') iconHtml = icon('alert-circle', 'icon-box icon-box--toast icon-box--toast-error', '');
+            else if (type === 'success') iconHtml = icon('check-circle', 'icon-box icon-box--toast icon-box--toast-success', '');
+            else if (type === 'warning') iconHtml = icon('alert-triangle', 'icon-box icon-box--toast icon-box--toast-warning', '');
             
-            toast.innerHTML = `${icon} <span>${message}</span>`;
+            toast.innerHTML = `${iconHtml} <span>${message}</span>`;
             container.appendChild(toast);
-            lucide.createIcons();
+            initIcons(toast);
 
             setTimeout(() => {
                 toast.classList.add('hiding');
@@ -777,21 +3572,29 @@
 
         downloadAllBtn.addEventListener('click', downloadAllZip);
 
-        
-        // Manejador del Drag & Drop y Click
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('clearDataModal');
+                if (modal && modal.classList.contains('is-open')) {
+                    closeClearDataModal();
+                }
+            }
+        });
+
+
         uploadZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadZone.querySelector('.dashed-border').classList.add('border-white/60', 'bg-white/5');
+            uploadZone.classList.add('is-dragover');
         });
 
         uploadZone.addEventListener('dragleave', (e) => {
             e.preventDefault();
-            uploadZone.querySelector('.dashed-border').classList.remove('border-white/60', 'bg-white/5');
+            uploadZone.classList.remove('is-dragover');
         });
 
         uploadZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadZone.querySelector('.dashed-border').classList.remove('border-white/60', 'bg-white/5');
+            uploadZone.classList.remove('is-dragover');
             if (e.dataTransfer.files && e.dataTransfer.files[0]) {
                 handleFile(e.dataTransfer.files[0]);
             }
@@ -809,30 +3612,35 @@
                 return;
             }
 
+            revokePreviewObjectUrl();
             state.file = file;
-            const reader = new FileReader();
-            
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    state.imgElement = img;
-                    imagePreview.src = e.target.result;
-                    originalInfo.textContent = `${img.width}x${img.height}px`;
-                    
-                    uploadZone.classList.add('hidden');
-                    previewContainer.classList.remove('hidden');
-                    settingsOverlay.classList.add('opacity-0', 'pointer-events-none');
-                    
-                    if(state.selectedFormats.size === 0) {
-                        formatCards[0].click();
-                    }
-                    
-                    updateProcessButton();
-                    resultsArea.classList.add('hidden');
-                };
-                img.src = e.target.result;
+
+            const objectUrl = URL.createObjectURL(file);
+            state.previewObjectUrl = objectUrl;
+
+            const img = new Image();
+            img.onload = () => {
+                state.imgElement = img;
+                imagePreview.src = objectUrl;
+                originalInfo.textContent = `${img.width}x${img.height}px`;
+
+                uploadZone.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+                animatePanelEnter(previewContainer);
+                settingsOverlay.classList.add('opacity-0', 'pointer-events-none');
+
+                if (state.selectedFormats.size === 0) {
+                    formatCards[0].click();
+                }
+
+                updateProcessButton();
+                resultsArea.classList.add('hidden');
             };
-            reader.readAsDataURL(file);
+            img.onerror = () => {
+                revokePreviewObjectUrl();
+                showToast('No se pudo cargar la imagen.', 'error');
+            };
+            img.src = objectUrl;
         }
 
         function updateProcessButton() {
@@ -871,11 +3679,13 @@
 
         scaleSlider.addEventListener('input', (e) => {
             state.scaleFactor = parseFloat(e.target.value);
-            scaleValue.textContent = state.scaleFactor.toFixed(1) + 'x';
-            updateResolutionEstimate();
+            scaleValue.textContent = state.scaleFactor.toFixed(1) + '×';
         });
 
+        scaleSlider.addEventListener('change', updateResolutionEstimate);
+
         resetBtn.addEventListener('click', () => {
+            revokePreviewObjectUrl();
             state.file = null;
             state.imgElement = null;
             fileInput.value = '';
@@ -894,20 +3704,33 @@
             if (!state.imgElement || state.selectedFormats.size === 0) return;
 
             const originalText = processBtn.innerHTML;
-            processBtn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i><span>Procesando...</span>`;
+            const formatsToProcess = [...state.selectedFormats];
+            const totalFormats = formatsToProcess.length;
+
+            processBtn.innerHTML = `${icon('loader-2', '', 'icon--md icon--spin')}<span id="processProgress">Procesando (0/${totalFormats})...</span>`;
             processBtn.setAttribute('disabled', 'true');
-            lucide.createIcons();
+            initIcons();
+            const progressSpan = processBtn.querySelector('#processProgress');
 
             downloadList.innerHTML = '';
             clearGeneratedFiles();
-            resultsArea.classList.remove('hidden');
+            resultsArea.classList.remove('hidden', 'results-reveal');
+            void resultsArea.offsetWidth;
+            resultsArea.classList.add('results-reveal');
 
             const img = state.imgElement;
             const HARDWARE_LIMIT = 16384; // Límite real máximo de navegadores web
             let totalBytesGeneratedThisRun = 0;
 
             try {
-                for (const formatKey of state.selectedFormats) {
+                for (let i = 0; i < formatsToProcess.length; i++) {
+                    await new Promise((resolve) => setTimeout(resolve, 50));
+
+                    if (progressSpan) {
+                        progressSpan.textContent = `Procesando (${i + 1}/${totalFormats})...`;
+                    }
+
+                    const formatKey = formatsToProcess[i];
                     const spec = formatSpecs[formatKey];
                     let targetW = spec.w * state.scaleFactor;
                     let targetH = spec.h * state.scaleFactor;
@@ -945,55 +3768,73 @@
                     ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, 0, 0, targetW, targetH);
 
                     // Generar Blob
-                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', getJpegQuality()));
                     if (!blob) throw new Error("Fallo al generar Blob (Límite de memoria)");
+
+                    // Miniatura antes de liberar el canvas principal
+                    const thumbCanvas = document.createElement('canvas');
+                    thumbCanvas.width = 40;
+                    thumbCanvas.height = 40 * (targetH / targetW);
+                    const thumbCtx = thumbCanvas.getContext('2d');
+                    thumbCtx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+                    const thumbUrl = thumbCanvas.toDataURL('image/jpeg', 0.5);
+                    thumbCanvas.width = 0;
+                    thumbCanvas.height = 0;
+
+                    canvas.width = 0;
+                    canvas.height = 0;
 
                     totalBytesGeneratedThisRun += blob.size;
                     const url = URL.createObjectURL(blob);
                     const fileName = buildFileName(state.file.name, formatKey, targetW, targetH);
                     state.generatedFiles.push({ filename: fileName, blob, url });
-                    
-                    // Obtener data url miniatura para la UI
-                    const thumbCanvas = document.createElement('canvas');
-                    thumbCanvas.width = 40;
-                    thumbCanvas.height = 40 * (targetH/targetW);
-                    const thumbCtx = thumbCanvas.getContext('2d');
-                    thumbCtx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
-                    const thumbUrl = thumbCanvas.toDataURL('image/jpeg', 0.5);
 
                     // Crear elemento en la lista
                     const item = document.createElement('div');
-                    item.className = 'flex items-center justify-between bg-zinc-900 border border-white/5 p-3 rounded-xl';
+                    item.className = 'list-item-enter flex items-center justify-between bg-white/[0.02] border border-white/[0.06] p-3 rounded-xl hover:bg-white/[0.04] hover:border-white/10 transition-all group';
+                    item.style.animationDelay = `${state.generatedFiles.length * 0.08}s`;
                     item.innerHTML = `
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-zinc-950 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                            <div class="w-10 h-10 bg-[#080808] rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border border-white/[0.06]">
                                 <img src="${thumbUrl}" class="w-full h-full object-contain">
                             </div>
                             <div>
-                                <p class="text-sm text-white font-medium">${spec.label}</p>
-                                <p class="text-[10px] text-zinc-500">${targetW} x ${targetH}px • ${formatBytes(blob.size)}</p>
+                                <p class="text-[13px] text-zinc-200 font-medium group-hover:text-white transition-colors">${spec.label}</p>
+                                <p class="text-[10px] text-zinc-600 font-mono tabular-nums">${targetW} × ${targetH}px · ${formatBytes(blob.size)}</p>
                             </div>
                         </div>
-                        <a href="${url}" download="${fileName}" class="p-2 bg-white text-black rounded-lg hover:bg-zinc-200 transition-colors">
-                            <i data-lucide="download" class="w-4 h-4"></i>
+                        <a href="${url}" download="${fileName}" class="flex items-center">
+                            ${icon('download', 'icon-box icon-box--download', '')}
                         </a>
                     `;
                     downloadList.appendChild(item);
                 }
 
-                // Actualizar Estadísticas
-                state.stats.filesProcessed += state.selectedFormats.size;
-                state.stats.bytesProcessed += totalBytesGeneratedThisRun;
-                
-                const now = new Date();
-                state.stats.history.unshift({
-                    name: state.file.name,
-                    formats: state.selectedFormats.size,
-                    date: `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`
+                const historyId = `hist-${Date.now()}`;
+                const thumbnail = createSourceThumbnail(img);
+                let archiveSaved = false;
+
+                if (typeof JSZip !== 'undefined' && state.generatedFiles.length > 0) {
+                    try {
+                        const zipBlob = await buildZipFromGeneratedFiles();
+                        await saveHistoryArchive(historyId, zipBlob);
+                        archiveSaved = true;
+                    } catch (archiveError) {
+                        console.error(archiveError);
+                        showToast('Historial guardado sin archivo descargable.', 'warning');
+                    }
+                }
+
+                updateStats({
+                    fileName: state.file.name,
+                    formatsUsed: [...state.selectedFormats],
+                    filesGenerated: state.selectedFormats.size,
+                    bytesAdded: totalBytesGeneratedThisRun,
+                    historyId,
+                    thumbnail,
+                    hasArchive: archiveSaved
                 });
-                
-                saveStats(); // Guarda en localStorage
-                showToast("Archivos generados con éxito", "success");
+                showToast('Archivos generados con éxito', 'success');
 
             } catch (error) {
                 console.error(error);
@@ -1001,14 +3842,56 @@
             } finally {
                 processBtn.innerHTML = originalText;
                 processBtn.removeAttribute('disabled');
-                lucide.createIcons();
+                initIcons();
             }
         });
 
         // Iniciar
+        loadSidebarState();
+        loadSettings();
         loadStats();
         updateResolutionEstimate();
-        lucide.createIcons();
+        initMockupsModule();
+        initIcons();
+
+        document.getElementById('jpegQualitySlider').addEventListener('input', (e) => {
+            const pct = parseInt(e.target.value, 10);
+            state.settings.jpegQuality = pct / 100;
+            document.getElementById('jpegQualityValue').textContent = `${pct}%`;
+            saveSettings();
+        });
+
+        document.getElementById('fileNamePattern').addEventListener('change', (e) => {
+            const value = e.target.value.trim();
+            state.settings.fileNamePattern = value || DEFAULT_SETTINGS.fileNamePattern;
+            e.target.value = state.settings.fileNamePattern;
+            saveSettings();
+        });
+
+        document.getElementById('unitCmBtn').addEventListener('click', () => setMeasureUnit('cm'));
+        document.getElementById('unitInBtn').addEventListener('click', () => setMeasureUnit('in'));
+
+        document.getElementById('clearDataModal').addEventListener('click', (e) => {
+            if (e.target.id === 'clearDataModal') {
+                closeClearDataModal();
+            }
+        });
+
+        document.getElementById('history-search').addEventListener('input', (e) => {
+            historyFilters.search = e.target.value;
+            renderHistoryUI();
+        });
+
+        document.getElementById('history-ratio-filter').addEventListener('change', (e) => {
+            historyFilters.ratio = e.target.value;
+            renderHistoryUI();
+        });
+
+        document.getElementById('history-list').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-history-id]');
+            if (!btn || btn.disabled) return;
+            downloadHistoryItem(btn.dataset.historyId, btn.dataset.historyName);
+        });
     </script>
 </body>
 </html>
