@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PosterPro - Optimizador de Producción</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- JSZip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        zinc: {
+                            850: '#1f1f22',
+                            900: '#18181b',
+                            950: '#0a0a0a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #e4e4e7;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(255, 255, 255, 0.04) 0%, transparent 50%);
+        }
+
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .format-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .format-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.03);
+            transform: translateY(-2px);
+        }
+
+        .active-card {
+            border-color: rgba(255, 255, 255, 0.8) !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+
+        .format-checkbox.checked {
+            background: #ffffff;
+            border-color: #ffffff;
+        }
+
+        .format-checkbox.checked .format-check-icon {
+            opacity: 1;
+            color: #000000;
+        }
+
+        .align-btn {
+            transition: all 0.2s ease;
+        }
+
+        .align-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .dashed-border {
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* View transitions */
+        .view-section {
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        .view-section.active {
+            display: flex;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Toast notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .toast {
+            background: #18181b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            transition: opacity 0.3s ease;
+        }
+        .toast.toast-error {
+            border-left: 4px solid #ef4444;
+        }
+        .toast.toast-success {
+            border-left: 4px solid #10b981;
+        }
+        .toast.toast-warning {
+            border-left: 4px solid #f59e0b;
+        }
+        .toast.hiding {
+            opacity: 0;
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex text-sm overflow-hidden selection:bg-white/20">
+
+    <!-- Sidebar -->
+    <aside class="w-64 glass-panel border-r border-t-0 border-b-0 border-l-0 flex flex-col z-20 shrink-0">
+        <!-- Brand -->
+        <div class="h-20 flex items-center px-6 border-b border-white/5">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                    <i data-lucide="layers" class="w-5 h-5 text-black"></i>
+                </div>
+                <span class="font-semibold text-lg text-white tracking-tight">PosterPro</span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-1">
+            <div class="px-3 mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Menú Principal</div>
+            
+            <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white w-full text-left">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span>Dashboard</span>
+            </button>
+            
+            <button onclick="switchView('processor')" id="nav-processor" class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white w-full text-left">
+                <i data-lucide="check-square" class="w-4 h-4"></i>
+                <span>Procesador</span>
+            </button>
+            
+            <button onclick="switchView('history')" id="nav-history" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white w-full text-left">
+                <i data-lucide="inbox" class="w-4 h-4"></i>
+                <span>Historial</span>
+            </button>
+
+            <div class="px-3 mt-8 mb-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">Sistema</div>
+            
+            <button onclick="switchView('settings')" id="nav-settings" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white w-full text-left">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+                <span>Ajustes</span>
+            </button>
+        </div>
+
+        <!-- User Profile -->
+        <div class="p-4 border-t border-white/5">
+            <div class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-500"></div>
+                <div class="flex flex-col">
+                    <span class="text-xs font-medium text-white">Estudio Creativo</span>
+                    <span class="text-[10px] text-zinc-500">Pro Plan</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 relative h-full overflow-hidden bg-[#0a0a0a]/50 flex flex-col">
+        
+        <!-- Header Top Bar -->
+        <header class="h-20 flex items-center justify-between px-10 border-b border-white/5 glass-panel z-10 shrink-0">
+            <h1 id="header-title" class="text-xl font-medium text-white">Procesador de Pósteres</h1>
+            <div class="flex items-center gap-4">
+                <button class="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-y-auto p-10">
+
+            <!-- ================= VIEW: DASHBOARD ================= -->
+            <section id="view-dashboard" class="view-section flex-col gap-8 w-full max-w-6xl mx-auto">
+                <div>
+                    <h2 class="text-3xl font-semibold text-white mb-2">Rendimiento</h2>
+                    <p class="text-zinc-400">Resumen de producción de tu tienda.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Stat Card 1 -->
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
+                        <div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-white/10">
+                            <i data-lucide="image" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-zinc-400 mb-1">Archivos Generados</p>
+                            <h3 id="stat-files" class="text-4xl font-light text-white">0</h3>
+                        </div>
+                    </div>
+                    <!-- Stat Card 2 -->
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4 relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                        <div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-white/10">
+                            <i data-lucide="hard-drive" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-zinc-400 mb-1">Volumen Procesado</p>
+                            <h3 id="stat-volume" class="text-4xl font-light text-white">0 MB</h3>
+                        </div>
+                    </div>
+                    <!-- Stat Card 3 -->
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
+                        <div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-white/10">
+                            <i data-lucide="clock" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-zinc-400 mb-1">Tiempo Ahorrado (Aprox)</p>
+                            <h3 id="stat-time" class="text-4xl font-light text-white">0 min</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-8 rounded-2xl mt-4">
+                    <h3 class="text-lg font-medium text-white mb-4">Actividad Reciente</h3>
+                    <div id="dashboard-recent" class="flex flex-col gap-4 text-zinc-400 text-sm">
+                        <p class="italic">No hay actividad reciente. Ve al Procesador para empezar.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW: PROCESSOR (TASKS) ================= -->
+            <section id="view-processor" class="view-section active flex-col lg:flex-row gap-8 w-full max-w-7xl mx-auto h-full min-h-[600px]">
+                
+                <!-- Left Column: Upload & Preview -->
+                <div class="flex-1 flex flex-col gap-4">
+                    
+                    <!-- Upload Zone (Corregido: Input encima de todo) -->
+                    <div id="uploadZone" class="relative group flex-1 glass-panel rounded-2xl flex flex-col items-center justify-center p-8 transition-all min-h-[300px]">
+                        <div class="dashed-border absolute inset-0 pointer-events-none transition-colors group-hover:border-white/30"></div>
+                        
+                        <!-- Input de archivo: Ocupa todo el espacio, invisible, con el z-index más alto -->
+                        <input type="file" id="fileInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50">
+                        
+                        <!-- Contenido visual -->
+                        <div class="w-16 h-16 rounded-full bg-zinc-800/50 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-zinc-700/50 transition-all duration-500 shadow-xl mb-4 pointer-events-none">
+                            <i data-lucide="upload-cloud" class="w-8 h-8 text-zinc-300 group-hover:text-white transition-colors"></i>
+                        </div>
+                        <div class="text-center pointer-events-none">
+                            <h3 class="text-base font-medium text-white mb-1">Subir Diseño Original</h3>
+                            <p class="text-sm text-zinc-400">Arrastra tu archivo o haz clic en esta área</p>
+                            <p class="text-xs text-zinc-500 mt-2">Soporta JPG, PNG, WEBP (Alta resolución)</p>
+                        </div>
+                    </div>
+
+                    <!-- Preview Area -->
+                    <div id="previewContainer" class="hidden flex-1 glass-panel rounded-2xl p-4 flex flex-col min-h-[300px]">
+                        <div class="flex items-center justify-between mb-4 px-2">
+                            <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Vista Previa Original</span>
+                            <span id="originalInfo" class="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded-md"></span>
+                        </div>
+                        <div class="flex-1 relative rounded-xl overflow-hidden bg-zinc-950 border border-white/5 flex items-center justify-center p-4">
+                            <img id="imagePreview" class="max-w-full max-h-full object-contain filter drop-shadow-2xl" src="" alt="Preview">
+                        </div>
+                        <button id="resetBtn" class="mt-4 py-3 px-4 rounded-xl border border-white/10 text-white hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            Subir otra imagen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Settings -->
+                <div class="w-full lg:w-[400px] flex flex-col gap-6 relative">
+                    <!-- Overlay to block settings if no image -->
+                    <div id="settingsOverlay" class="absolute inset-0 bg-[#0a0a0a]/80 backdrop-blur-[2px] z-10 rounded-2xl flex flex-col items-center justify-center text-center p-8 transition-opacity duration-300">
+                        <i data-lucide="lock" class="w-6 h-6 text-zinc-500 mb-3"></i>
+                        <p class="text-zinc-400 text-sm">Sube un diseño para desbloquear los ajustes de producción.</p>
+                    </div>
+
+                    <!-- Format Selection -->
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-white font-medium">Ratios de Impresión</h3>
+                            <span class="text-xs text-zinc-500">Multiselección</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- Ratio Cards -->
+                            <button class="format-card relative p-4 rounded-xl border border-white/10 bg-zinc-800/30 text-left overflow-hidden flex flex-col gap-1" data-format="2:3">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded border border-white/20 flex items-center justify-center transition-colors"><i data-lucide="check" class="format-check-icon w-3 h-3 opacity-0 transition-opacity"></i></div>
+                                <span class="text-white font-medium block">Ratio 2:3</span>
+                                <span class="text-[10px] text-zinc-500">Ej: 24x36", 20x30", 16x24"</span>
+                            </button>
+                            <button class="format-card relative p-4 rounded-xl border border-white/10 bg-zinc-800/30 text-left overflow-hidden flex flex-col gap-1" data-format="3:4">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded border border-white/20 flex items-center justify-center transition-colors"><i data-lucide="check" class="format-check-icon w-3 h-3 opacity-0 transition-opacity"></i></div>
+                                <span class="text-white font-medium block">Ratio 3:4</span>
+                                <span class="text-[10px] text-zinc-500">Ej: 18x24", 15x20", 12x16"</span>
+                            </button>
+                            <button class="format-card relative p-4 rounded-xl border border-white/10 bg-zinc-800/30 text-left overflow-hidden flex flex-col gap-1" data-format="4:5">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded border border-white/20 flex items-center justify-center transition-colors"><i data-lucide="check" class="format-check-icon w-3 h-3 opacity-0 transition-opacity"></i></div>
+                                <span class="text-white font-medium block">Ratio 4:5</span>
+                                <span class="text-[10px] text-zinc-500">Ej: 16x20", 8x10", 4x5"</span>
+                            </button>
+                            <button class="format-card relative p-4 rounded-xl border border-white/10 bg-zinc-800/30 text-left overflow-hidden flex flex-col gap-1" data-format="11:14">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded border border-white/20 flex items-center justify-center transition-colors"><i data-lucide="check" class="format-check-icon w-3 h-3 opacity-0 transition-opacity"></i></div>
+                                <span class="text-white font-medium block">11:14 Pulgadas</span>
+                                <span class="text-[10px] text-zinc-500">Estándar americano</span>
+                            </button>
+                            <button class="format-card relative p-4 rounded-xl border border-white/10 bg-zinc-800/30 text-left overflow-hidden flex flex-col gap-1" data-format="A-Series">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded border border-white/20 flex items-center justify-center transition-colors"><i data-lucide="check" class="format-check-icon w-3 h-3 opacity-0 transition-opacity"></i></div>
+                                <span class="text-white font-medium block">ISO (Serie A)</span>
+                                <span class="text-[10px] text-zinc-500">A1, A2, A3, A4, 50x70cm</span>
+                            </button>
+                            <button class="format-card relative p-4 rounded-xl border border-white/10 bg-zinc-800/30 text-left overflow-hidden flex flex-col gap-1" data-format="1:1">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded border border-white/20 flex items-center justify-center transition-colors"><i data-lucide="check" class="format-check-icon w-3 h-3 opacity-0 transition-opacity"></i></div>
+                                <span class="text-white font-medium block">Cuadrado (1:1)</span>
+                                <span class="text-[10px] text-zinc-500">Cualquier tamaño simétrico</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Crop Alignment -->
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-4">
+                        <h3 class="text-white font-medium">Alineación del Recorte</h3>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" class="align-btn px-3 py-2.5 rounded-xl border border-white/10 bg-zinc-800/30 text-zinc-400 hover:text-white hover:border-white/20 text-xs font-medium" data-alignment="top">Superior</button>
+                            <button type="button" class="align-btn active px-3 py-2.5 rounded-xl border border-white/10 bg-zinc-800/30 text-zinc-400 hover:text-white hover:border-white/20 text-xs font-medium" data-alignment="center">Centro</button>
+                            <button type="button" class="align-btn px-3 py-2.5 rounded-xl border border-white/10 bg-zinc-800/30 text-zinc-400 hover:text-white hover:border-white/20 text-xs font-medium" data-alignment="bottom">Inferior</button>
+                        </div>
+                    </div>
+
+                    <!-- Scale -->
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col gap-6">
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-white font-medium">Multiplicador de Resolución</label>
+                                <span id="scaleValue" class="text-white bg-white/10 px-2 py-0.5 rounded text-xs font-mono">1.0x</span>
+                            </div>
+                            <input type="range" id="scaleSlider" min="1" max="3" step="0.5" value="1">
+                            <p id="resolutionEstimate" class="text-[10px] text-zinc-400 leading-tight">Selecciona un ratio para ver la resolución estimada.</p>
+                        </div>
+                    </div>
+
+                    <button id="processBtn" disabled class="w-full py-4 rounded-xl bg-white text-black font-semibold hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                        <i data-lucide="cpu" class="w-5 h-5"></i>
+                        <span>Generar Archivos</span>
+                    </button>
+
+                    <!-- Results Area -->
+                    <div id="resultsArea" class="glass-panel p-6 rounded-2xl flex-col gap-4 hidden">
+                        <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                            <h3 class="text-white font-medium">Archivos Listos</h3>
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+                        </div>
+                        <div id="downloadList" class="flex flex-col gap-3 mt-3">
+                            <!-- Inyectado por JS -->
+                        </div>
+                        <button id="downloadAllBtn" class="w-full py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-medium hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-2 mt-1">
+                            <i data-lucide="archive" class="w-4 h-4"></i>
+                            <span>Descargar Todo (.ZIP)</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW: HISTORY ================= -->
+            <section id="view-history" class="view-section flex-col gap-6 w-full max-w-4xl mx-auto">
+                <div>
+                    <h2 class="text-2xl font-semibold text-white">Historial de Producción</h2>
+                    <p class="text-zinc-400 mt-1">Registro de los últimos archivos procesados.</p>
+                </div>
+                <div class="glass-panel p-2 rounded-2xl">
+                    <div id="history-list" class="flex flex-col">
+                        <div class="p-8 text-center text-zinc-500">Aún no has procesado ninguna imagen.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW: SETTINGS ================= -->
+            <section id="view-settings" class="view-section flex-col gap-6 w-full max-w-2xl mx-auto">
+                <div>
+                    <h2 class="text-2xl font-semibold text-white">Ajustes del Sistema</h2>
+                    <p class="text-zinc-400 mt-1">Configuración global de exportación.</p>
+                </div>
+                
+                <div class="glass-panel p-6 rounded-2xl flex flex-col gap-6">
+                    <div>
+                        <h3 class="text-white font-medium mb-3">Formato de Exportación</h3>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 text-zinc-300 cursor-pointer">
+                                <input type="radio" name="export-fmt" checked class="accent-white"> JPEG (Alta Calidad)
+                            </label>
+                            <label class="flex items-center gap-2 text-zinc-500 cursor-not-allowed" title="Próximamente">
+                                <input type="radio" name="export-fmt" disabled class="accent-white"> PNG
+                            </label>
+                        </div>
+                    </div>
+                    <div class="h-px w-full bg-white/10"></div>
+                    <div>
+                        <h3 class="text-white font-medium mb-3">Perfil de Color (Simulado)</h3>
+                        <select class="w-full bg-zinc-900 border border-white/10 text-white rounded-lg p-3 outline-none focus:border-white/30">
+                            <option>sRGB (Recomendado para Web/General)</option>
+                            <option>Adobe RGB (1998)</option>
+                            <option>CMYK Coated FOGRA39 (Requiere Pro)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl border-red-900/30 flex flex-col gap-4 mt-4">
+                    <h3 class="text-red-400 font-medium">Zona Peligrosa</h3>
+                    <button onclick="clearStats()" class="py-2 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors text-left w-max">
+                        Borrar todos los datos y estadísticas
+                    </button>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <script>
+        // Inicializar Iconos
+        lucide.createIcons();
+
+        // Estado Global
+        const state = {
+            file: null,
+            imgElement: null,
+            selectedFormats: new Set(),
+            scaleFactor: 1.0,
+            cropAlignment: 'center',
+            generatedFiles: [],
+            stats: {
+                filesProcessed: 0,
+                bytesProcessed: 0,
+                history: []
+            }
+        };
+
+        // Formatos y resoluciones base (DPI 300)
+        const formatSpecs = {
+            "2:3": { w: 7200, h: 10800, label: "Ratio 2:3" }, // 24x36"
+            "3:4": { w: 5400, h: 7200, label: "Ratio 3:4" },  // 18x24"
+            "4:5": { w: 4800, h: 6000, label: "Ratio 4:5" },  // 16x20"
+            "11:14": { w: 3300, h: 4200, label: "11x14 in" },
+            "A-Series": { w: 7016, h: 9933, label: "ISO A-Series" }, // A1 aprox
+            "1:1": { w: 6000, h: 6000, label: "Cuadrado 1:1" }
+        };
+
+        // Cargar Estadísticas
+        function loadStats() {
+            const saved = localStorage.getItem('posterProStats');
+            if (saved) {
+                state.stats = JSON.parse(saved);
+            }
+            updateDashboardUI();
+        }
+
+        function saveStats() {
+            localStorage.setItem('posterProStats', JSON.stringify(state.stats));
+            updateDashboardUI();
+        }
+
+        function clearStats() {
+            if(confirm("¿Seguro que quieres borrar todas las estadísticas?")) {
+                state.stats = { filesProcessed: 0, bytesProcessed: 0, history: [] };
+                saveStats();
+                showToast("Estadísticas borradas", "success");
+            }
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (!+bytes) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+        }
+
+        function pxToCm(px) {
+            return (px / 300) * 2.54;
+        }
+
+        function buildFileName(originalName, formatKey, targetW, targetH) {
+            const baseName = originalName.replace(/\.[^/.]+$/, '');
+            const ratioPart = 'Ratio' + formatKey.replace(':', 'x');
+            const dimPart = `${Math.round(targetW)}x${Math.round(targetH)}`;
+            return `${baseName}_${ratioPart}_${dimPart}.jpg`;
+        }
+
+        function calculateCropRect(img, targetW, targetH, alignment) {
+            const imageRatio = img.width / img.height;
+            const targetRatio = targetW / targetH;
+
+            let sourceX = 0;
+            let sourceY = 0;
+            let sourceW = img.width;
+            let sourceH = img.height;
+
+            if (imageRatio > targetRatio) {
+                sourceW = img.height * targetRatio;
+                sourceX = (img.width - sourceW) / 2;
+            } else if (imageRatio < targetRatio) {
+                sourceH = img.width / targetRatio;
+                if (alignment === 'top') {
+                    sourceY = 0;
+                } else if (alignment === 'bottom') {
+                    sourceY = img.height - sourceH;
+                } else {
+                    sourceY = (img.height - sourceH) / 2;
+                }
+            }
+
+            return { sourceX, sourceY, sourceW, sourceH };
+        }
+
+        function clearGeneratedFiles() {
+            state.generatedFiles.forEach(({ url }) => {
+                if (url) URL.revokeObjectURL(url);
+            });
+            state.generatedFiles = [];
+        }
+
+        async function downloadAllZip() {
+            if (state.generatedFiles.length === 0) {
+                showToast('No hay archivos para descargar.', 'error');
+                return;
+            }
+            if (typeof JSZip === 'undefined') {
+                showToast('JSZip no está disponible.', 'error');
+                return;
+            }
+
+            const downloadAllBtn = document.getElementById('downloadAllBtn');
+            const originalBtnText = downloadAllBtn.innerHTML;
+            downloadAllBtn.disabled = true;
+            downloadAllBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Empaquetando...</span>`;
+            lucide.createIcons();
+
+            try {
+                const zip = new JSZip();
+                state.generatedFiles.forEach(({ filename, blob }) => {
+                    zip.file(filename, blob);
+                });
+
+                const now = new Date();
+                const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                const zipName = `Posters_Pack_${dateStr}.zip`;
+                const content = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(content);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = zipName;
+                link.click();
+                URL.revokeObjectURL(url);
+                showToast('ZIP descargado con éxito', 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('Error al generar el ZIP.', 'error');
+            } finally {
+                downloadAllBtn.disabled = false;
+                downloadAllBtn.innerHTML = originalBtnText;
+                lucide.createIcons();
+            }
+        }
+
+        function updateResolutionEstimate() {
+            const el = document.getElementById('resolutionEstimate');
+            if (state.selectedFormats.size === 0) {
+                el.textContent = 'Selecciona un ratio para ver la resolución estimada.';
+                return;
+            }
+
+            const lines = [];
+            for (const formatKey of state.selectedFormats) {
+                const spec = formatSpecs[formatKey];
+                const wCm = Math.round(pxToCm(spec.w * state.scaleFactor));
+                const hCm = Math.round(pxToCm(spec.h * state.scaleFactor));
+                if (state.selectedFormats.size === 1) {
+                    el.textContent = `Resolución estimada: ~${wCm} × ${hCm} cm a 300 DPI`;
+                    return;
+                }
+                lines.push(`${spec.label}: ~${wCm} × ${hCm} cm`);
+            }
+            el.textContent = `Resolución estimada a 300 DPI — ${lines.join(' · ')}`;
+        }
+
+        // --- SISTEMA DE NAVEGACIÓN (SPA) ---
+        function switchView(viewName) {
+            // Actualizar botones del menú
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`nav-${viewName}`).classList.add('active');
+
+            // Actualizar vistas
+            document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active'));
+            document.getElementById(`view-${viewName}`).classList.add('active');
+
+            // Actualizar título
+            const titles = {
+                'dashboard': 'Dashboard de Producción',
+                'processor': 'Procesador de Pósteres',
+                'history': 'Historial',
+                'settings': 'Ajustes del Sistema'
+            };
+            document.getElementById('header-title').textContent = titles[viewName];
+
+            if (viewName === 'dashboard' || viewName === 'history') {
+                updateDashboardUI();
+            }
+        }
+
+        function updateDashboardUI() {
+            // Stats
+            document.getElementById('stat-files').textContent = state.stats.filesProcessed;
+            document.getElementById('stat-volume').textContent = formatBytes(state.stats.bytesProcessed, 1);
+            // Tiempo inventado basado en uso (2 mins de ahorro por archivo)
+            document.getElementById('stat-time').textContent = (state.stats.filesProcessed * 2) + ' min';
+
+            // Historial reciente para Dashboard (Top 3)
+            const dashRecent = document.getElementById('dashboard-recent');
+            if (state.stats.history.length === 0) {
+                dashRecent.innerHTML = '<p class="italic text-zinc-500">No hay actividad reciente.</p>';
+            } else {
+                dashRecent.innerHTML = state.stats.history.slice(0, 3).map(h => `
+                    <div class="flex items-center justify-between border-b border-white/5 pb-2 last:border-0 last:pb-0">
+                        <span class="text-white">${h.name}</span>
+                        <span class="text-xs text-zinc-500">${h.date}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Vista de Historial Completa
+            const historyList = document.getElementById('history-list');
+            if (state.stats.history.length === 0) {
+                historyList.innerHTML = '<div class="p-8 text-center text-zinc-500">Aún no has procesado ninguna imagen.</div>';
+            } else {
+                historyList.innerHTML = state.stats.history.map(h => `
+                    <div class="flex items-center justify-between p-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="image" class="w-4 h-4 text-zinc-500"></i>
+                            <div>
+                                <p class="text-white text-sm">${h.name}</p>
+                                <p class="text-xs text-zinc-500">${h.formats} formatos generados</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-zinc-400">${h.date}</span>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            }
+        }
+
+        // --- SISTEMA DE TOASTS ---
+        function showToast(message, type = "error") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            let icon = '';
+            if (type === 'error') icon = `<i data-lucide="alert-circle" class="w-5 h-5 text-red-400"></i>`;
+            else if (type === 'success') icon = `<i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>`;
+            else if (type === 'warning') icon = `<i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i>`;
+            
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // --- LÓGICA DE LA INTERFAZ DEL PROCESADOR ---
+        const fileInput = document.getElementById('fileInput');
+        const uploadZone = document.getElementById('uploadZone');
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const originalInfo = document.getElementById('originalInfo');
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const formatCards = document.querySelectorAll('.format-card');
+        const alignBtns = document.querySelectorAll('.align-btn');
+        const processBtn = document.getElementById('processBtn');
+        const resultsArea = document.getElementById('resultsArea');
+        const downloadList = document.getElementById('downloadList');
+        const scaleSlider = document.getElementById('scaleSlider');
+        const scaleValue = document.getElementById('scaleValue');
+        const resetBtn = document.getElementById('resetBtn');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+
+        downloadAllBtn.addEventListener('click', downloadAllZip);
+
+        
+        // Manejador del Drag & Drop y Click
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.querySelector('.dashed-border').classList.add('border-white/60', 'bg-white/5');
+        });
+
+        uploadZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadZone.querySelector('.dashed-border').classList.remove('border-white/60', 'bg-white/5');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.querySelector('.dashed-border').classList.remove('border-white/60', 'bg-white/5');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('Por favor, sube un archivo de imagen válido (JPG, PNG).');
+                return;
+            }
+
+            state.file = file;
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.imgElement = img;
+                    imagePreview.src = e.target.result;
+                    originalInfo.textContent = `${img.width}x${img.height}px`;
+                    
+                    uploadZone.classList.add('hidden');
+                    previewContainer.classList.remove('hidden');
+                    settingsOverlay.classList.add('opacity-0', 'pointer-events-none');
+                    
+                    if(state.selectedFormats.size === 0) {
+                        formatCards[0].click();
+                    }
+                    
+                    updateProcessButton();
+                    resultsArea.classList.add('hidden');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateProcessButton() {
+            if (state.selectedFormats.size > 0 && state.file) {
+                processBtn.removeAttribute('disabled');
+            } else {
+                processBtn.setAttribute('disabled', 'true');
+            }
+        }
+
+        formatCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const format = card.dataset.format;
+                const checkbox = card.querySelector('.format-checkbox');
+                if (state.selectedFormats.has(format)) {
+                    state.selectedFormats.delete(format);
+                    card.classList.remove('active-card');
+                    checkbox.classList.remove('checked');
+                } else {
+                    state.selectedFormats.add(format);
+                    card.classList.add('active-card');
+                    checkbox.classList.add('checked');
+                }
+                updateProcessButton();
+                updateResolutionEstimate();
+            });
+        });
+
+        alignBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.cropAlignment = btn.dataset.alignment;
+                alignBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        scaleSlider.addEventListener('input', (e) => {
+            state.scaleFactor = parseFloat(e.target.value);
+            scaleValue.textContent = state.scaleFactor.toFixed(1) + 'x';
+            updateResolutionEstimate();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            state.file = null;
+            state.imgElement = null;
+            fileInput.value = '';
+            imagePreview.src = '';
+            
+            uploadZone.classList.remove('hidden');
+            previewContainer.classList.add('hidden');
+            settingsOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            resultsArea.classList.add('hidden');
+            clearGeneratedFiles();
+            
+            updateProcessButton();
+        });
+
+        processBtn.addEventListener('click', async () => {
+            if (!state.imgElement || state.selectedFormats.size === 0) return;
+
+            const originalText = processBtn.innerHTML;
+            processBtn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i><span>Procesando...</span>`;
+            processBtn.setAttribute('disabled', 'true');
+            lucide.createIcons();
+
+            downloadList.innerHTML = '';
+            clearGeneratedFiles();
+            resultsArea.classList.remove('hidden');
+
+            const img = state.imgElement;
+            const HARDWARE_LIMIT = 16384; // Límite real máximo de navegadores web
+            let totalBytesGeneratedThisRun = 0;
+
+            try {
+                for (const formatKey of state.selectedFormats) {
+                    const spec = formatSpecs[formatKey];
+                    let targetW = spec.w * state.scaleFactor;
+                    let targetH = spec.h * state.scaleFactor;
+
+                    // Salvavidas de Hardware
+                    if (targetW > HARDWARE_LIMIT || targetH > HARDWARE_LIMIT) {
+                        const maxDimension = Math.max(targetW, targetH);
+                        const reductionRatio = HARDWARE_LIMIT / maxDimension;
+                        targetW = Math.floor(targetW * reductionRatio);
+                        targetH = Math.floor(targetH * reductionRatio);
+                        showToast(`Resolución máxima alcanzada en ${spec.label}. Optimizado a ${HARDWARE_LIMIT}px para evitar colapsos.`, "warning");
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = targetW;
+                    canvas.height = targetH;
+                    const ctx = canvas.getContext('2d');
+
+                    // Lógica de recorte según alineación vertical
+                    const { sourceX, sourceY, sourceW, sourceH } = calculateCropRect(
+                        img,
+                        targetW,
+                        targetH,
+                        state.cropAlignment
+                    );
+
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    
+                    // Rellenar fondo negro por si acaso (PNG transparente)
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(0, 0, targetW, targetH);
+                    
+                    // Dibujar imagen recortada al centro
+                    ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, 0, 0, targetW, targetH);
+
+                    // Generar Blob
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+                    if (!blob) throw new Error("Fallo al generar Blob (Límite de memoria)");
+
+                    totalBytesGeneratedThisRun += blob.size;
+                    const url = URL.createObjectURL(blob);
+                    const fileName = buildFileName(state.file.name, formatKey, targetW, targetH);
+                    state.generatedFiles.push({ filename: fileName, blob, url });
+                    
+                    // Obtener data url miniatura para la UI
+                    const thumbCanvas = document.createElement('canvas');
+                    thumbCanvas.width = 40;
+                    thumbCanvas.height = 40 * (targetH/targetW);
+                    const thumbCtx = thumbCanvas.getContext('2d');
+                    thumbCtx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+                    const thumbUrl = thumbCanvas.toDataURL('image/jpeg', 0.5);
+
+                    // Crear elemento en la lista
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center justify-between bg-zinc-900 border border-white/5 p-3 rounded-xl';
+                    item.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-zinc-950 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                                <img src="${thumbUrl}" class="w-full h-full object-contain">
+                            </div>
+                            <div>
+                                <p class="text-sm text-white font-medium">${spec.label}</p>
+                                <p class="text-[10px] text-zinc-500">${targetW} x ${targetH}px • ${formatBytes(blob.size)}</p>
+                            </div>
+                        </div>
+                        <a href="${url}" download="${fileName}" class="p-2 bg-white text-black rounded-lg hover:bg-zinc-200 transition-colors">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </a>
+                    `;
+                    downloadList.appendChild(item);
+                }
+
+                // Actualizar Estadísticas
+                state.stats.filesProcessed += state.selectedFormats.size;
+                state.stats.bytesProcessed += totalBytesGeneratedThisRun;
+                
+                const now = new Date();
+                state.stats.history.unshift({
+                    name: state.file.name,
+                    formats: state.selectedFormats.size,
+                    date: `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`
+                });
+                
+                saveStats(); // Guarda en localStorage
+                showToast("Archivos generados con éxito", "success");
+
+            } catch (error) {
+                console.error(error);
+                showToast("Error de procesamiento. Reduce el escalado.", "error");
+            } finally {
+                processBtn.innerHTML = originalText;
+                processBtn.removeAttribute('disabled');
+                lucide.createIcons();
+            }
+        });
+
+        // Iniciar
+        loadStats();
+        updateResolutionEstimate();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
