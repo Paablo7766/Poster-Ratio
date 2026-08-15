@@ -1623,36 +1623,6 @@
                         </div>
                     </div>
 
-                    <!-- PowerPoint & Pitchbooks -->
-                    <div class="glass-panel rounded-2xl overflow-hidden">
-                        <div class="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
-                            <h3 class="text-sm font-semibold text-white">PowerPoint &amp; Pitchbooks</h3>
-                            <span class="text-[10px] font-medium text-zinc-600 bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 rounded-md">Presentación</span>
-                        </div>
-                        <div class="p-4 grid grid-cols-2 gap-2">
-                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="16:9">
-                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
-                                <span class="text-[13px] text-white font-medium block">16:9 Widescreen</span>
-                                <span class="text-[10px] text-zinc-600 leading-tight">PowerPoint estándar</span>
-                            </button>
-                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="4:3">
-                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
-                                <span class="text-[13px] text-white font-medium block">4:3 Clásico</span>
-                                <span class="text-[10px] text-zinc-600 leading-tight">PowerPoint legacy</span>
-                            </button>
-                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="Letter-L">
-                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
-                                <span class="text-[13px] text-white font-medium block">Letter apaisado</span>
-                                <span class="text-[10px] text-zinc-600 leading-tight">11×8.5" pitchbook</span>
-                            </button>
-                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="A4-L">
-                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
-                                <span class="text-[13px] text-white font-medium block">A4 apaisado</span>
-                                <span class="text-[10px] text-zinc-600 leading-tight">297×210 mm pitchbook</span>
-                            </button>
-                        </div>
-                    </div>
-
                     <!-- Crop Alignment -->
                     <div class="glass-panel rounded-2xl overflow-hidden">
                         <div class="px-5 py-4 border-b border-white/[0.06]">
@@ -1694,6 +1664,7 @@
                         <div id="downloadList" class="flex flex-col gap-2 p-4">
                             <!-- Inyectado por JS -->
                         </div>
+                        <p id="zipSizeIndicator" class="hidden px-4 pb-2 text-[11px] font-mono tabular-nums text-zinc-500"></p>
                         <div class="px-4 pb-4">
                             <button id="downloadAllBtn" class="w-full py-2.5 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/15 hover:border-emerald-500/30 transition-all flex items-center justify-center gap-2">
                                 <span class="icon-box icon-box--sm icon-box--success-soft"><i data-lucide="archive"></i></span>
@@ -1836,10 +1807,6 @@
                         <option value="11:14">11:14</option>
                         <option value="A-Series">ISO</option>
                         <option value="1:1">1:1</option>
-                        <option value="16:9">16:9</option>
-                        <option value="4:3">4:3</option>
-                        <option value="Letter-L">Letter L</option>
-                        <option value="A4-L">A4 L</option>
                     </select>
                     <button
                         id="history-clear-btn"
@@ -1911,6 +1878,20 @@
                             </div>
                             <input type="range" id="jpegQualitySlider" min="80" max="100" step="1" value="95" class="w-full">
                             <p class="text-[11px] text-zinc-600 mt-2">Mayor calidad = archivos más pesados. Recomendado: 95% para impresión.</p>
+                        </div>
+
+                        <div class="h-px w-full bg-white/[0.06]"></div>
+
+                        <div>
+                            <div class="flex items-center justify-between gap-4 mb-2">
+                                <div>
+                                    <p class="text-xs font-medium text-zinc-500 uppercase tracking-wider">Límite de ZIP</p>
+                                    <p class="text-[11px] text-zinc-600 mt-1 leading-relaxed">Ajusta calidad y resolución para que el paquete no supere 20 MB.</p>
+                                </div>
+                                <button type="button" id="limitZipBtn" class="settings-toggle-btn shrink-0 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-zinc-400 text-sm font-medium">
+                                    Máx. 20 MB
+                                </button>
+                            </div>
                         </div>
 
                         <div class="h-px w-full bg-white/[0.06]"></div>
@@ -2156,7 +2137,8 @@
             settings: {
                 jpegQuality: 0.95,
                 measureUnit: 'cm',
-                fileNamePattern: '[NombreOriginal]_[Ratio]'
+                fileNamePattern: '[NombreOriginal]_[Ratio]',
+                limitZipTo20Mb: false
             },
             mockup: {
                 posterDataUrl: null,
@@ -2173,8 +2155,15 @@
         const DEFAULT_SETTINGS = {
             jpegQuality: 0.95,
             measureUnit: 'cm',
-            fileNamePattern: '[NombreOriginal]_[Ratio]'
+            fileNamePattern: '[NombreOriginal]_[Ratio]',
+            limitZipTo20Mb: false
         };
+
+        const ZIP_MAX_BYTES = 20 * 1024 * 1024;
+        const ZIP_BUDGET_RATIO = 0.95;
+        const MIN_ZIP_QUALITY = 0.80;
+        const MIN_ZIP_SCALE = 0.5;
+        const HARDWARE_LIMIT = 16384;
 
         function loadSettings() {
             const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
@@ -2199,6 +2188,7 @@
             const patternInput = document.getElementById('fileNamePattern');
             const unitCmBtn = document.getElementById('unitCmBtn');
             const unitInBtn = document.getElementById('unitInBtn');
+            const limitZipBtn = document.getElementById('limitZipBtn');
 
             if (slider) slider.value = qualityPct;
             if (qualityLabel) qualityLabel.textContent = `${qualityPct}%`;
@@ -2207,6 +2197,10 @@
             if (unitCmBtn && unitInBtn) {
                 unitCmBtn.classList.toggle('active', state.settings.measureUnit === 'cm');
                 unitInBtn.classList.toggle('active', state.settings.measureUnit === 'in');
+            }
+
+            if (limitZipBtn) {
+                limitZipBtn.classList.toggle('active', state.settings.limitZipTo20Mb);
             }
         }
 
@@ -2347,8 +2341,6 @@
 
         function getRatioBadgeLabel(ratioKey) {
             if (ratioKey === 'A-Series') return 'ISO';
-            if (ratioKey === 'Letter-L') return 'Letter L';
-            if (ratioKey === 'A4-L') return 'A4 L';
             return ratioKey;
         }
 
@@ -2572,11 +2564,7 @@
             "4:5": { w: 4800, h: 6000, label: "Ratio 4:5" },  // 16x20"
             "11:14": { w: 3300, h: 4200, label: "11x14 in" },
             "A-Series": { w: 7016, h: 9933, label: "ISO A-Series" }, // A1 aprox
-            "1:1": { w: 6000, h: 6000, label: "Cuadrado 1:1" },
-            "16:9": { w: 4000, h: 2250, label: "16:9 Widescreen" }, // 13.33x7.5"
-            "4:3": { w: 3000, h: 2250, label: "4:3 Clásico" }, // 10x7.5"
-            "Letter-L": { w: 3300, h: 2550, label: "Letter apaisado" }, // 11x8.5"
-            "A4-L": { w: 3508, h: 2480, label: "A4 apaisado" } // 297x210 mm
+            "1:1": { w: 6000, h: 6000, label: "Cuadrado 1:1" }
         };
 
         // Cargar Estadísticas
@@ -2707,6 +2695,169 @@
                 if (url) URL.revokeObjectURL(url);
             });
             state.generatedFiles = [];
+        }
+
+        function clampExportDimensions(targetW, targetH) {
+            if (targetW <= HARDWARE_LIMIT && targetH <= HARDWARE_LIMIT) {
+                return { w: targetW, h: targetH, clamped: false };
+            }
+            const maxDimension = Math.max(targetW, targetH);
+            const reductionRatio = HARDWARE_LIMIT / maxDimension;
+            return {
+                w: Math.floor(targetW * reductionRatio),
+                h: Math.floor(targetH * reductionRatio),
+                clamped: true
+            };
+        }
+
+        async function renderFormatToBlob(img, formatKey, scaleFactor, quality) {
+            const spec = formatSpecs[formatKey];
+            const scaled = clampExportDimensions(spec.w * scaleFactor, spec.h * scaleFactor);
+            const targetW = scaled.w;
+            const targetH = scaled.h;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = targetW;
+            canvas.height = targetH;
+            const ctx = canvas.getContext('2d');
+
+            const { sourceX, sourceY, sourceW, sourceH } = calculateCropRect(
+                img,
+                targetW,
+                targetH,
+                state.cropAlignment
+            );
+
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, targetW, targetH);
+            ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, 0, 0, targetW, targetH);
+
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+            if (!blob) throw new Error('Fallo al generar Blob (Límite de memoria)');
+
+            const thumbCanvas = document.createElement('canvas');
+            thumbCanvas.width = 40;
+            thumbCanvas.height = 40 * (targetH / targetW);
+            const thumbCtx = thumbCanvas.getContext('2d');
+            thumbCtx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+            const thumbUrl = thumbCanvas.toDataURL('image/jpeg', 0.5);
+            thumbCanvas.width = 0;
+            thumbCanvas.height = 0;
+            canvas.width = 0;
+            canvas.height = 0;
+
+            return { formatKey, spec, targetW, targetH, blob, thumbUrl, hardwareClamped: scaled.clamped };
+        }
+
+        function getFilesTotalSize(items) {
+            return items.reduce((sum, item) => sum + item.blob.size, 0);
+        }
+
+        async function renderAllFormats(img, formatsToProcess, scaleFactor, quality, onProgress) {
+            const results = [];
+            for (let i = 0; i < formatsToProcess.length; i++) {
+                if (onProgress) onProgress(i + 1, formatsToProcess.length);
+                results.push(await renderFormatToBlob(img, formatsToProcess[i], scaleFactor, quality));
+                await new Promise((resolve) => setTimeout(resolve, 50));
+            }
+            return results;
+        }
+
+        async function optimizeExportsForZipLimit(img, formatsToProcess, baseScale, baseQuality, onProgress) {
+            const targetBytes = ZIP_MAX_BYTES * ZIP_BUDGET_RATIO;
+            let quality = baseQuality;
+            let scale = baseScale;
+            let qualityAdjusted = false;
+            let scaleAdjusted = false;
+            let hardwareClamped = false;
+
+            let results = await renderAllFormats(img, formatsToProcess, scale, quality, onProgress);
+            hardwareClamped = results.some((item) => item.hardwareClamped);
+            let total = getFilesTotalSize(results);
+
+            while (total > targetBytes && quality > MIN_ZIP_QUALITY + 0.001) {
+                qualityAdjusted = true;
+                quality = Math.max(MIN_ZIP_QUALITY, Math.round((quality - 0.05) * 100) / 100);
+                if (onProgress) onProgress(0, formatsToProcess.length, 'optimizing');
+                results = await renderAllFormats(img, formatsToProcess, scale, quality, onProgress);
+                hardwareClamped = results.some((item) => item.hardwareClamped);
+                total = getFilesTotalSize(results);
+            }
+
+            while (total > targetBytes && scale > MIN_ZIP_SCALE + 0.001) {
+                scaleAdjusted = true;
+                scale = Math.max(MIN_ZIP_SCALE, Math.round((scale - 0.1) * 10) / 10);
+                if (onProgress) onProgress(0, formatsToProcess.length, 'optimizing');
+                results = await renderAllFormats(img, formatsToProcess, scale, quality, onProgress);
+                hardwareClamped = results.some((item) => item.hardwareClamped);
+                total = getFilesTotalSize(results);
+            }
+
+            return {
+                results,
+                quality,
+                scale,
+                total,
+                withinLimit: total <= targetBytes,
+                qualityAdjusted,
+                scaleAdjusted,
+                hardwareClamped
+            };
+        }
+
+        function appendDownloadListItem(result, index) {
+            const { spec, targetW, targetH, blob, thumbUrl, formatKey } = result;
+            const url = URL.createObjectURL(blob);
+            const fileName = buildFileName(state.file.name, formatKey, targetW, targetH);
+            state.generatedFiles.push({ filename: fileName, blob, url });
+
+            const item = document.createElement('div');
+            item.className = 'list-item-enter flex items-center justify-between bg-white/[0.02] border border-white/[0.06] p-3 rounded-xl hover:bg-white/[0.04] hover:border-white/10 transition-all group';
+            item.style.animationDelay = `${index * 0.08}s`;
+            item.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-[#080808] rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border border-white/[0.06]">
+                        <img src="${thumbUrl}" class="w-full h-full object-contain">
+                    </div>
+                    <div>
+                        <p class="text-[13px] text-zinc-200 font-medium group-hover:text-white transition-colors">${spec.label}</p>
+                        <p class="text-[10px] text-zinc-600 font-mono tabular-nums">${targetW} × ${targetH}px · ${formatBytes(blob.size)}</p>
+                    </div>
+                </div>
+                <a href="${url}" download="${fileName}" class="flex items-center">
+                    ${icon('download', 'icon-box icon-box--download', '')}
+                </a>
+            `;
+            downloadList.appendChild(item);
+        }
+
+        function updateZipSizeIndicator(totalBytes, optimized = false) {
+            const el = document.getElementById('zipSizeIndicator');
+            if (!el) return;
+
+            el.classList.remove('hidden', 'text-zinc-500', 'text-emerald-400', 'text-amber-400');
+            const limitLabel = `${ZIP_MAX_BYTES / (1024 * 1024)} MB`;
+            let text = `ZIP estimado: ${formatBytes(totalBytes)} / ${limitLabel}`;
+
+            if (state.settings.limitZipTo20Mb) {
+                if (optimized) text += ' · optimizado';
+                if (totalBytes <= ZIP_MAX_BYTES * ZIP_BUDGET_RATIO) {
+                    el.classList.add('text-emerald-400');
+                } else {
+                    el.classList.add('text-amber-400');
+                }
+            } else {
+                el.classList.add('text-zinc-500');
+            }
+
+            el.textContent = text;
+        }
+
+        function hideZipSizeIndicator() {
+            const el = document.getElementById('zipSizeIndicator');
+            if (el) el.classList.add('hidden');
         }
 
         function revokePreviewObjectUrl() {
@@ -3754,100 +3905,86 @@
 
             downloadList.innerHTML = '';
             clearGeneratedFiles();
+            hideZipSizeIndicator();
             resultsArea.classList.remove('hidden', 'results-reveal');
             void resultsArea.offsetWidth;
             resultsArea.classList.add('results-reveal');
 
             const img = state.imgElement;
-            const HARDWARE_LIMIT = 16384; // Límite real máximo de navegadores web
             let totalBytesGeneratedThisRun = 0;
 
+            const updateProgress = (current, total, mode) => {
+                if (!progressSpan) return;
+                if (mode === 'optimizing') {
+                    progressSpan.textContent = 'Optimizando peso del ZIP...';
+                    return;
+                }
+                progressSpan.textContent = `Procesando (${current}/${total})...`;
+            };
+
             try {
-                for (let i = 0; i < formatsToProcess.length; i++) {
-                    await new Promise((resolve) => setTimeout(resolve, 50));
+                let exportResults;
+                let exportMeta = {
+                    quality: getJpegQuality(),
+                    scale: state.scaleFactor,
+                    qualityAdjusted: false,
+                    scaleAdjusted: false,
+                    withinLimit: true,
+                    hardwareClamped: false
+                };
 
-                    if (progressSpan) {
-                        progressSpan.textContent = `Procesando (${i + 1}/${totalFormats})...`;
-                    }
-
-                    const formatKey = formatsToProcess[i];
-                    const spec = formatSpecs[formatKey];
-                    let targetW = spec.w * state.scaleFactor;
-                    let targetH = spec.h * state.scaleFactor;
-
-                    // Salvavidas de Hardware
-                    if (targetW > HARDWARE_LIMIT || targetH > HARDWARE_LIMIT) {
-                        const maxDimension = Math.max(targetW, targetH);
-                        const reductionRatio = HARDWARE_LIMIT / maxDimension;
-                        targetW = Math.floor(targetW * reductionRatio);
-                        targetH = Math.floor(targetH * reductionRatio);
-                        showToast(`Resolución máxima alcanzada en ${spec.label}. Optimizado a ${HARDWARE_LIMIT}px para evitar colapsos.`, "warning");
-                    }
-
-                    const canvas = document.createElement('canvas');
-                    canvas.width = targetW;
-                    canvas.height = targetH;
-                    const ctx = canvas.getContext('2d');
-
-                    // Lógica de recorte según alineación vertical
-                    const { sourceX, sourceY, sourceW, sourceH } = calculateCropRect(
+                if (state.settings.limitZipTo20Mb) {
+                    const optimized = await optimizeExportsForZipLimit(
                         img,
-                        targetW,
-                        targetH,
-                        state.cropAlignment
+                        formatsToProcess,
+                        state.scaleFactor,
+                        getJpegQuality(),
+                        updateProgress
                     );
+                    exportResults = optimized.results;
+                    exportMeta = optimized;
+                } else {
+                    exportResults = await renderAllFormats(
+                        img,
+                        formatsToProcess,
+                        state.scaleFactor,
+                        getJpegQuality(),
+                        updateProgress
+                    );
+                    exportMeta.total = getFilesTotalSize(exportResults);
+                    exportMeta.hardwareClamped = exportResults.some((item) => item.hardwareClamped);
+                }
 
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = 'high';
-                    
-                    // Rellenar fondo negro por si acaso (PNG transparente)
-                    ctx.fillStyle = '#000000';
-                    ctx.fillRect(0, 0, targetW, targetH);
-                    
-                    // Dibujar imagen recortada al centro
-                    ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, 0, 0, targetW, targetH);
+                if (exportMeta.hardwareClamped) {
+                    showToast(`Resolución máxima alcanzada. Optimizado a ${HARDWARE_LIMIT}px para evitar colapsos.`, 'warning');
+                }
 
-                    // Generar Blob
-                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', getJpegQuality()));
-                    if (!blob) throw new Error("Fallo al generar Blob (Límite de memoria)");
+                exportResults.forEach((result, index) => {
+                    appendDownloadListItem(result, index);
+                    totalBytesGeneratedThisRun += result.blob.size;
+                });
 
-                    // Miniatura antes de liberar el canvas principal
-                    const thumbCanvas = document.createElement('canvas');
-                    thumbCanvas.width = 40;
-                    thumbCanvas.height = 40 * (targetH / targetW);
-                    const thumbCtx = thumbCanvas.getContext('2d');
-                    thumbCtx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
-                    const thumbUrl = thumbCanvas.toDataURL('image/jpeg', 0.5);
-                    thumbCanvas.width = 0;
-                    thumbCanvas.height = 0;
+                updateZipSizeIndicator(
+                    totalBytesGeneratedThisRun,
+                    exportMeta.qualityAdjusted || exportMeta.scaleAdjusted
+                );
 
-                    canvas.width = 0;
-                    canvas.height = 0;
-
-                    totalBytesGeneratedThisRun += blob.size;
-                    const url = URL.createObjectURL(blob);
-                    const fileName = buildFileName(state.file.name, formatKey, targetW, targetH);
-                    state.generatedFiles.push({ filename: fileName, blob, url });
-
-                    // Crear elemento en la lista
-                    const item = document.createElement('div');
-                    item.className = 'list-item-enter flex items-center justify-between bg-white/[0.02] border border-white/[0.06] p-3 rounded-xl hover:bg-white/[0.04] hover:border-white/10 transition-all group';
-                    item.style.animationDelay = `${state.generatedFiles.length * 0.08}s`;
-                    item.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-[#080808] rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border border-white/[0.06]">
-                                <img src="${thumbUrl}" class="w-full h-full object-contain">
-                            </div>
-                            <div>
-                                <p class="text-[13px] text-zinc-200 font-medium group-hover:text-white transition-colors">${spec.label}</p>
-                                <p class="text-[10px] text-zinc-600 font-mono tabular-nums">${targetW} × ${targetH}px · ${formatBytes(blob.size)}</p>
-                            </div>
-                        </div>
-                        <a href="${url}" download="${fileName}" class="flex items-center">
-                            ${icon('download', 'icon-box icon-box--download', '')}
-                        </a>
-                    `;
-                    downloadList.appendChild(item);
+                if (state.settings.limitZipTo20Mb) {
+                    if (!exportMeta.withinLimit) {
+                        showToast(
+                            `No se pudo reducir el ZIP por debajo de 20 MB (${formatBytes(exportMeta.total)}).`,
+                            'warning'
+                        );
+                    } else if (exportMeta.qualityAdjusted || exportMeta.scaleAdjusted) {
+                        const parts = [];
+                        if (exportMeta.qualityAdjusted) {
+                            parts.push(`calidad ${Math.round(exportMeta.quality * 100)}%`);
+                        }
+                        if (exportMeta.scaleAdjusted) {
+                            parts.push(`escala ${exportMeta.scale.toFixed(1)}×`);
+                        }
+                        showToast(`ZIP limitado a 20 MB (${parts.join(', ')}).`, 'success');
+                    }
                 }
 
                 const historyId = `hist-${Date.now()}`;
@@ -3910,6 +4047,18 @@
 
         document.getElementById('unitCmBtn').addEventListener('click', () => setMeasureUnit('cm'));
         document.getElementById('unitInBtn').addEventListener('click', () => setMeasureUnit('in'));
+
+        document.getElementById('limitZipBtn').addEventListener('click', () => {
+            state.settings.limitZipTo20Mb = !state.settings.limitZipTo20Mb;
+            saveSettings();
+            syncSettingsUI();
+            showToast(
+                state.settings.limitZipTo20Mb
+                    ? 'Límite de ZIP activado (máx. 20 MB).'
+                    : 'Límite de ZIP desactivado.',
+                'success'
+            );
+        });
 
         document.getElementById('clearDataModal').addEventListener('click', (e) => {
             if (e.target.id === 'clearDataModal') {
