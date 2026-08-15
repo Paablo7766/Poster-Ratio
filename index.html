@@ -1623,6 +1623,36 @@
                         </div>
                     </div>
 
+                    <!-- PowerPoint & Pitchbooks -->
+                    <div class="glass-panel rounded-2xl overflow-hidden">
+                        <div class="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-white">PowerPoint &amp; Pitchbooks</h3>
+                            <span class="text-[10px] font-medium text-zinc-600 bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 rounded-md">Presentación</span>
+                        </div>
+                        <div class="p-4 grid grid-cols-2 gap-2">
+                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="16:9">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
+                                <span class="text-[13px] text-white font-medium block">16:9 Widescreen</span>
+                                <span class="text-[10px] text-zinc-600 leading-tight">PowerPoint estándar</span>
+                            </button>
+                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="4:3">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
+                                <span class="text-[13px] text-white font-medium block">4:3 Clásico</span>
+                                <span class="text-[10px] text-zinc-600 leading-tight">PowerPoint legacy</span>
+                            </button>
+                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="Letter-L">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
+                                <span class="text-[13px] text-white font-medium block">Letter apaisado</span>
+                                <span class="text-[10px] text-zinc-600 leading-tight">11×8.5" pitchbook</span>
+                            </button>
+                            <button class="format-card relative p-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-left flex flex-col gap-0.5" data-format="A4-L">
+                                <div class="format-checkbox absolute top-3 right-3 w-4 h-4 rounded-md border border-white/20 flex items-center justify-center transition-all"><i data-lucide="check" class="format-check-icon icon icon--sm opacity-0 transition-opacity"></i></div>
+                                <span class="text-[13px] text-white font-medium block">A4 apaisado</span>
+                                <span class="text-[10px] text-zinc-600 leading-tight">297×210 mm pitchbook</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Crop Alignment -->
                     <div class="glass-panel rounded-2xl overflow-hidden">
                         <div class="px-5 py-4 border-b border-white/[0.06]">
@@ -1806,6 +1836,10 @@
                         <option value="11:14">11:14</option>
                         <option value="A-Series">ISO</option>
                         <option value="1:1">1:1</option>
+                        <option value="16:9">16:9</option>
+                        <option value="4:3">4:3</option>
+                        <option value="Letter-L">Letter L</option>
+                        <option value="A4-L">A4 L</option>
                     </select>
                     <button
                         id="history-clear-btn"
@@ -2313,6 +2347,8 @@
 
         function getRatioBadgeLabel(ratioKey) {
             if (ratioKey === 'A-Series') return 'ISO';
+            if (ratioKey === 'Letter-L') return 'Letter L';
+            if (ratioKey === 'A4-L') return 'A4 L';
             return ratioKey;
         }
 
@@ -2536,7 +2572,11 @@
             "4:5": { w: 4800, h: 6000, label: "Ratio 4:5" },  // 16x20"
             "11:14": { w: 3300, h: 4200, label: "11x14 in" },
             "A-Series": { w: 7016, h: 9933, label: "ISO A-Series" }, // A1 aprox
-            "1:1": { w: 6000, h: 6000, label: "Cuadrado 1:1" }
+            "1:1": { w: 6000, h: 6000, label: "Cuadrado 1:1" },
+            "16:9": { w: 4000, h: 2250, label: "16:9 Widescreen" }, // 13.33x7.5"
+            "4:3": { w: 3000, h: 2250, label: "4:3 Clásico" }, // 10x7.5"
+            "Letter-L": { w: 3300, h: 2550, label: "Letter apaisado" }, // 11x8.5"
+            "A4-L": { w: 3508, h: 2480, label: "A4 apaisado" } // 297x210 mm
         };
 
         // Cargar Estadísticas
