@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  base: '/Poster-Ratio/',
   root: '.',
   server: {
     port: 5173,
